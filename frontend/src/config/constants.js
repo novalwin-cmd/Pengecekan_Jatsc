@@ -3,7 +3,7 @@
  * Centralized configuration for API, equipment types, and settings
  */
 
-export const API_BASE_URL = 'http://127.0.0.1:5000/api';
+export const API_BASE_URL = 'http://127.0.0.1:3002/api';
 
 export const EQUIPMENT_TYPES = {
   CHILLER: 'chiller',

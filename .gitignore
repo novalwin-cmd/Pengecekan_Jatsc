@@ -1,17 +1,33 @@
-# Frontend dependencies
+# Node modules
+node_modules/
+backend/node_modules/
 frontend/node_modules/
+
+# Build outputs
 frontend/dist/
+dist/
+
+# Database
+*.db
+backend/jatsc_inspections.db
+jatsc_inspections.db
+
+# Environment files
+.env
+.env.local
 frontend/.env.local
 frontend/.env
+backend/.env
+
+# OS
+.DS_Store
 frontend/.DS_Store
 
-# Backend dependencies
+# Backend Python (legacy)
 backend/venv/
 backend/__pycache__/
 backend/*.pyc
-backend/.env
 backend/instance/
-backend/jatsc_inspections.db
 
 # IDE
 .vscode/

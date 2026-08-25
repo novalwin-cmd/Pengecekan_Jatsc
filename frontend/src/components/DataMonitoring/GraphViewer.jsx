@@ -15,6 +15,7 @@ const GraphViewer = ({ equipmentType, parameter, timeRange }) => {
   const [data, setData] = useState([]);
   const [threshold, setThreshold] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const { data: readingsData, fetch: fetchReadings } = useApiGet(
     `/data-monitoring/readings?equipment_type=${equipmentType}&parameter=${parameter}`
@@ -24,38 +25,54 @@ const GraphViewer = ({ equipmentType, parameter, timeRange }) => {
     `/thresholds?equipment_type=${equipmentType}&parameter=${parameter}`
   );
 
+  // Fetch data when equipment type or parameter changes
   useEffect(() => {
-    setLoading(true);
-    fetchReadings();
-    fetchThreshold();
-  }, [equipmentType, parameter]);
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        await fetchReadings();
+        await fetchThreshold();
+      } catch (err) {
+        console.error('Error loading graph data:', err);
+        setError('Failed to load graph data');
+      }
+    };
+    loadData();
+  }, [equipmentType, parameter, fetchReadings, fetchThreshold]);
 
+  // Process readings data and apply time range filter
   useEffect(() => {
-    if (readingsData?.data) {
+    if (readingsData?.data && Array.isArray(readingsData.data)) {
       const readings = readingsData.data;
 
-      // Process data based on time range
-      let processedData = readings.map(r => ({
-        timestamp: new Date(r.timestamp).toLocaleDateString('id-ID'),
+      // Filter by time range BEFORE converting dates to strings
+      const now = new Date();
+      const filteredReadings = filterByTimeRange(readings, timeRange, now);
+
+      // Process data after filtering
+      const processedData = filteredReadings.map(r => ({
+        timestamp: new Date(r.createdAt).toLocaleDateString('id-ID'),
+        rawDate: new Date(r.createdAt),
         value: getValueForParameter(r, parameter),
         anomaly: r.anomaly_detected,
         location: r.location,
         equipment: r.peralatan,
       }));
 
-      // Filter by time range
-      processedData = filterByTimeRange(processedData, timeRange);
-
       setData(processedData);
       setLoading(false);
     }
   }, [readingsData, timeRange]);
 
+  // Process threshold data
   useEffect(() => {
     if (thresholdData?.data && thresholdData.data.length > 0) {
-      setThreshold(thresholdData.data[0]);
+      // Find threshold matching the current parameter
+      const matchingThreshold = thresholdData.data.find(t => t.parameter === parameter);
+      setThreshold(matchingThreshold || thresholdData.data[0]);
     }
-  }, [thresholdData]);
+  }, [thresholdData, parameter]);
 
   const getValueForParameter = (reading, param) => {
     const paramMap = {
@@ -68,25 +85,31 @@ const GraphViewer = ({ equipmentType, parameter, timeRange }) => {
     return paramMap[param] || 0;
   };
 
-  const filterByTimeRange = (data, range) => {
-    const now = new Date();
+  const filterByTimeRange = (data, range, now = new Date()) => {
     let startDate;
 
     switch(range) {
       case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        // Last 30 days
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         break;
       case '6-month':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+        // Last 6 months
+        startDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
         break;
       case 'year':
-        startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        // Last 12 months
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
         break;
       default:
         return data;
     }
 
-    return data.filter(d => new Date(d.timestamp) >= startDate);
+    // Filter using createdAt field which is a date string
+    return data.filter(d => {
+      const readingDate = new Date(d.createdAt);
+      return readingDate >= startDate;
+    });
   };
 
   const CustomDot = (props) => {
@@ -99,11 +122,20 @@ const GraphViewer = ({ equipmentType, parameter, timeRange }) => {
     return null;
   };
 
+  if (error) {
+    return (
+      <div className="graph-empty">
+        <p style={{ color: '#EF4444' }}>❌ Error: {error}</p>
+        <small style={{ color: 'var(--color-text-muted)' }}>Check browser console for details</small>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="graph-loading">
         <div className="spinner"></div>
-        <p>Loading graph data...</p>
+        <p>Loading graph data for {equipmentType}...</p>
       </div>
     );
   }
@@ -111,13 +143,19 @@ const GraphViewer = ({ equipmentType, parameter, timeRange }) => {
   if (data.length === 0) {
     return (
       <div className="graph-empty">
-        <p>📭 No data available for this time range</p>
+        <p>📭 No data available for {equipmentType}</p>
+        <small style={{ color: 'var(--color-text-muted)' }}>
+          Try a longer time range or check if readings exist for this equipment
+        </small>
       </div>
     );
   }
 
   return (
     <div className="graph-viewer">
+      <h3 style={{ marginTop: 0, marginBottom: '16px', textTransform: 'capitalize' }}>
+        {equipmentType === 'chiller' ? '❄️ Chiller' : equipmentType === 'pump' ? '💧 Pump' : '🌬️ AHU'} - {parameter.replace('_', ' ')}
+      </h3>
       <div className="graph-container">
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={data} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>

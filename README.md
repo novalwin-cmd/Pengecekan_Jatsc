@@ -1,366 +1,281 @@
 # JATSC Inspection System
 
-A professional web-based equipment monitoring and inspection system with real-time data collection, historical analysis, and threshold-based anomaly detection.
+Professional equipment monitoring and inspection dashboard with React + Node.js + SQLite.
+
+**Now 100% Node.js - Super Simple Setup!** ✨
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- **Node.js 16+** → [Download](https://nodejs.org/)
+
+That's it! No Python, no virtual environments!
+
+### Installation & Running
+
+```bash
+# 1. Download ZIP from GitHub
+# https://github.com/novalwin-cmd/Pengecekan_Jatsc
+
+# 2. Extract and enter folder
+cd Pengecekan_Jatsc
+
+# 3. Install dependencies (one time)
+npm install
+
+# 4. Start everything
+npm run dev
+```
+
+Done! 🎉
+
+- **Frontend**: http://localhost:5173
+- **Backend**: http://127.0.0.1:5000
+
+---
+
+## 📋 What Just Happened
+
+When you run `npm run dev`, it:
+- ✅ Starts React frontend on port 5173
+- ✅ Starts Node.js backend on port 5000
+- ✅ Both running simultaneously
+- ✅ Hot reload enabled for both
+- ✅ One command to rule them all!
+
+---
 
 ## 🎯 Features
 
 ### ✓ Daily Check Workflow
-- Start/stop inspection sessions with date, shift, and time tracking
-- Personnel management (add team members during checks)
-- Multi-equipment data entry (Chiller 180TR, Pump, AHU)
-- Real-time anomaly detection based on configurable thresholds
-- Notes and metadata per session
+- Record equipment readings (Chiller, Pump, AHU)
+- Add team members
+- Real-time anomaly detection
+- Export to CSV, XLSX, PDF
 
 ### 📚 History & Analysis
-- View all completed daily checks
-- Inline expansion with detailed readings
-- Multi-equipment comparison on single graph
-- Equipment-specific threshold visualization
-- Export to CSV, XLSX, PDF formats
+- View all past checks
+- Inline graph visualization
+- Multi-equipment comparison
+- Export historical data
 
-### 📊 Data Monitoring Dashboard
-- Historical trend analysis with Recharts
-- Multi-select equipment display (all on one graph)
-- Multiple time range views (Monthly, 6-Month, Yearly)
-- Threshold management interface
-- Color-coded equipment (Blue/Green/Amber)
-- Voltage and temperature parameter tracking
-
-### ⚡ Advanced Capabilities
-- Real-time anomaly detection and flagging
-- Configurable min/max thresholds per equipment
-- Alert levels (Warning/Critical)
-- Multi-format data export (CSV, XLSX, PDF)
-- Responsive design (Desktop/Tablet/Mobile)
-- Professional design system with Electric Blue/Emerald/Amber palette
+### 📊 Data Monitoring
+- Historical trend analysis
+- Configurable thresholds
+- Time range filtering
+- Color-coded equipment display
 
 ---
 
-## 🏗️ Architecture
+## 📁 Project Structure
 
-### Tech Stack
-- **Frontend:** React 19 + Vite 8.2.2 + Recharts
-- **Backend:** Flask 2.3.3 + SQLAlchemy 2.0.23
-- **Database:** SQLite
-- **Styling:** CSS Grid + Design Token System
-
-### Project Structure
 ```
-jatsc-inspection-system/
-├── frontend/
+Pengecekan_Jatsc/
+├── frontend/                 # React application
 │   ├── src/
-│   │   ├── components/
-│   │   │   ├── Layout/
-│   │   │   │   ├── Shell.jsx
-│   │   │   │   └── Sidebar.jsx
-│   │   │   ├── DailyCheck/
-│   │   │   │   ├── index.jsx
-│   │   │   │   ├── DailyCheckStart.jsx
-│   │   │   │   ├── DailyCheckActive.jsx
-│   │   │   │   ├── DailyCheckComplete.jsx
-│   │   │   │   └── DailyCheck.css
-│   │   │   ├── History/
-│   │   │   │   ├── HistoryList.jsx
-│   │   │   │   ├── HistoryDetail.jsx
-│   │   │   │   └── History.css
-│   │   │   ├── DataMonitoring/
-│   │   │   │   ├── index.jsx
-│   │   │   │   ├── GraphViewer.jsx
-│   │   │   │   ├── GraphViewerMulti.jsx
-│   │   │   │   ├── ThresholdManager.jsx
-│   │   │   │   └── DataMonitoring.css
-│   │   │   ├── Toast.jsx
-│   │   │   └── Toast.css
-│   │   ├── config/constants.js
-│   │   ├── hooks/useApi.js
-│   │   ├── hooks/useExport.js
-│   │   ├── styles/
-│   │   │   ├── tokens.css
-│   │   │   ├── layout.css
-│   │   │   └── components.css
-│   │   ├── App.jsx
-│   │   ├── App.css
-│   │   ├── index.css
-│   │   └── main.jsx
-│   ├── index.html
-│   ├── package.json
-│   └── vite.config.js
-├── backend/
-│   ├── models.py
-│   ├── app.py
-│   └── requirements.txt
-├── .gitignore
-└── README.md
+│   │   ├── components/      # Daily Check, History, Monitoring
+│   │   ├── hooks/           # API utilities
+│   │   ├── utils/           # Export & debug tools
+│   │   └── styles/          # Design tokens
+│   └── package.json
+├── backend/                  # Node.js + Express
+│   ├── src/
+│   │   ├── index.js        # Server entry
+│   │   ├── models.js       # Database models
+│   │   └── routes.js       # API endpoints
+│   └── package.json
+├── package.json            # Root commands
+└── README.md               # This file
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🔧 Available Commands
 
-### Prerequisites
-- Node.js 16+ and npm
-- Python 3.8+
-
-### Installation
-
-#### Backend Setup
 ```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-#### Frontend Setup
-```bash
-cd frontend
-npm install
-```
-
-### Running the Application
-
-#### Option 1: Start Everything with One Command (Recommended)
-```bash
-./START.sh
-```
-
-This will:
-- ✅ Start Backend on http://127.0.0.1:5000
-- ✅ Start Frontend on http://localhost:5173
-- ✅ Wait for both services to be ready
-- ✅ Show URLs and logs
-
-#### Option 2: Start Backend and Frontend Separately
-
-**Start Backend**
-```bash
-cd backend
-python3 app.py
-# Backend runs on http://127.0.0.1:5000
-```
-
-**Start Frontend (in new terminal)**
-```bash
-cd frontend
+# Start both frontend and backend
 npm run dev
-# Frontend runs on http://localhost:5173
+
+# Start only backend
+npm run dev:backend
+
+# Start only frontend
+npm run dev:frontend
+
+# Install all dependencies
+npm install-all
+
+# Build frontend for production
+npm run build
 ```
 
-#### Option 3: Use Individual Start Scripts
-```bash
-# Terminal 1
-./START_BACKEND.sh
+---
 
-# Terminal 2
-./START_FRONTEND.sh
+## 💾 Database
+
+SQLite database is automatically created at:
+```
+backend/jatsc_inspections.db
 ```
 
----
-
-## 📱 Application Views
-
-### 1. Daily Check (✓)
-- **Purpose:** Primary data entry point
-- **Features:** 
-  - Session start with date/shift/time
-  - Personnel management
-  - Equipment readings (Chiller/Pump/AHU)
-  - Export to CSV/XLSX/PDF
-  - Anomaly detection
-
-### 2. History (📚)
-- **Purpose:** Review and analyze past checks
-- **Features:**
-  - List of all daily checks
-  - Click to expand detailed view
-  - Multi-equipment graph comparison (all on one chart)
-  - Threshold visualization
-  - Filtered readings display
-
-### 3. Monitoring (📊)
-- **Purpose:** Historical trend analysis
-- **Features:**
-  - Multi-equipment selection
-  - Combined graph view
-  - Parameter selection
-  - Time range filtering (Monthly/6-Month/Yearly)
-  - Threshold management
-  - Color-coded equipment display
+Tables:
+- `DailyChecks` - Daily inspection sessions
+- `DailyCheckPersonnels` - Team members per check
+- `DailyCheckReadings` - Equipment readings
+- `Thresholds` - Min/max alert values
 
 ---
 
-## 🗄️ Database Schema
+## 🌐 API Endpoints
 
-### Daily Checks Table
-- `id` (PK), `date`, `shift`, `start_time`, `stop_time`, `status`, `notes`, `created_at`, `updated_at`
-
-### Daily Check Personnel
-- `id` (PK), `daily_check_id` (FK), `name`, `role`, `sequence`, `added_at`
-
-### Daily Check Readings
-- `id` (PK), `daily_check_id` (FK), `equipment_type`, `location`, `peralatan`
-- `R`, `S`, `T`, `in_temp`, `out_temp`, `keterangan`
-- `timestamp`, `anomaly_detected`, `anomaly_reason`
-
-### Thresholds
-- `id` (PK), `equipment_type`, `parameter`
-- `min_value`, `max_value`, `alert_level`, `is_active`
-- `created_at`, `updated_at`
-
----
-
-## 🎨 Design System
-
-### Color Palette
-- **Primary:** Electric Blue (#0284C7)
-- **Success:** Emerald Green (#10B981)
-- **Warning:** Amber (#F59E0B)
-- **Error:** Red (#EF4444)
-
-### Responsive Breakpoints
-- **Desktop:** Full sidebar + main content
-- **Tablet (768px):** Sidebar to top nav
-- **Mobile:** Single column, touch-friendly (44px targets)
-
----
-
-## 🔧 API Endpoints
+All endpoints are localhost:5000 - perfect for AirNav private network!
 
 ### Daily Checks
-- `POST /api/daily-check/start` — Create new session
-- `POST /api/daily-check/:id/personnel` — Add personnel
-- `POST /api/daily-check/:id/reading` — Record equipment reading
-- `POST /api/daily-check/:id/stop` — Complete session
-- `GET /api/daily-check/:id` — Get check details
-- `GET /api/daily-checks` — List all checks
+- `GET /api/daily-checks` - List all checks
+- `GET /api/daily-check/:id` - Get check details
+- `POST /api/daily-check/start` - Start new check
+- `POST /api/daily-check/:id/stop` - Complete check
+
+### Personnel
+- `POST /api/daily-check/:id/personnel` - Add team member
+- `DELETE /api/personnel/:id` - Remove team member
+
+### Readings
+- `POST /api/daily-check/:id/reading` - Record reading
+- `DELETE /api/reading/:id` - Remove reading
 
 ### Thresholds
-- `GET /api/thresholds` — List all thresholds
-- `POST /api/thresholds` — Create threshold
-- `PUT /api/thresholds/:id` — Update threshold
+- `GET /api/thresholds` - List thresholds
+- `POST /api/thresholds` - Create threshold
+- `PUT /api/thresholds/:id` - Update threshold
 
 ### Monitoring
-- `GET /api/data-monitoring/readings` — Fetch historical readings
+- `GET /api/data-monitoring/readings` - Historical data
 
 ---
 
-## ✨ Key Features Explained
+## 📊 Equipment Types
 
-### Real-Time Anomaly Detection
-Readings are automatically compared against configured thresholds at submission time:
-- If value > max_value → `anomaly_detected = true`
-- If value < min_value → `anomaly_detected = true`
-- Flagged readings appear with red markers on graphs
-
-### Multi-Equipment Graphing
-Select multiple equipment types and see them all on ONE combined graph:
-- 🔵 Chiller = Blue line
-- 🟢 Pump = Green line
-- 🟠 AHU = Amber line
-- Each equipment shows independent threshold lines
-
-### Configurable Thresholds
-Edit min/max values per equipment type:
-- Values apply to anomaly detection
-- Display as reference lines on graphs
-- Alert level indicates severity (Warning/Critical)
-- Can be enabled/disabled per equipment
+Supported equipment:
+- **Chiller (180 TR)** - Voltage (R,S,T) + Temperature (In/Out)
+- **Pump** - Voltage (R,S,T)
+- **AHU** - Voltage (R,S,T)
 
 ---
 
-## 📊 Data Export
+## ⚙️ Configuration
 
-### CSV Format
-- Metadata header (Check ID, Date, Shift, etc.)
-- Personnel section
-- Equipment readings table
-- Notes section
+### Change Backend Port
+Edit `backend/src/index.js`:
+```javascript
+const PORT = 5000; // Change here
+```
 
-### Excel (XLSX)
-- **Summary Sheet:** Check metadata and statistics
-- **Personnel Sheet:** All team members
-- **Readings Sheet:** Complete equipment data
+### Change Frontend Port
+Edit `frontend/vite.config.js`:
+```javascript
+server: {
+  port: 5173 // Change here
+}
+```
 
-### PDF
-- Professional formatted report
-- Header with check information
-- Personnel list
-- Equipment readings table
-- Notes section
-- Timestamp footer
+---
+
+## 🛠️ Troubleshooting
+
+### Port Already in Use
+
+**Kill existing processes:**
+```bash
+# macOS/Linux
+lsof -i :5000 | grep LISTEN | awk '{print $2}' | xargs kill -9
+lsof -i :5173 | grep LISTEN | awk '{print $2}' | xargs kill -9
+
+# Windows
+taskkill /F /IM node.exe
+```
+
+### Dependencies Installation Fails
+
+```bash
+# Clear cache and reinstall
+npm cache clean --force
+npm install-all
+```
+
+### Backend Won't Start
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+---
+
+## 📱 Browser Support
+
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
 
 ---
 
 ## 🔐 Security Notes
 
-- Backend uses CORS for frontend communication
-- Database is SQLite (suitable for single-server deployment)
-- No authentication implemented (designed for internal network use)
-- All timestamps are server-generated
+- Localhost only (perfect for private network)
+- CORS enabled for localhost
+- No authentication layer (internal use)
+- SQLite suitable for single server
 
 ---
 
-## 📝 Development Notes
+## 📚 Technology Stack
 
-### Component Architecture
-- **State-based views** (no routing library) for simplicity
-- **Reusable parameterized components** (EquipmentTable, GraphViewers)
-- **CSS Grid layout** for responsive, mobile-first design
-- **Custom hooks** (useApi, useExport) to eliminate boilerplate
+### Frontend
+- React 19
+- Vite 8.2.2
+- Recharts (graphs)
+- html2canvas (export)
+- jsPDF (PDF generation)
 
-### Performance Optimizations
-- Recharts for efficient chart rendering
-- Lazy loading of history data
-- Browser storage for UI preferences
-- Efficient timestamp filtering
-
-### Testing Strategy
-- Manual testing workflow described in guides
-- Test data pre-loaded (14 daily checks, 66+ readings)
-- Anomaly detection testable by exceeding thresholds
+### Backend
+- Node.js 16+
+- Express 4.18
+- Sequelize ORM
+- SQLite3
 
 ---
 
-## 🤝 Contributing
+## 🚀 Deployment on AirNav Network
 
-When contributing, please:
-1. Keep component files focused and single-responsibility
-2. Add CSS classes to `components.css` rather than inline styles
-3. Use design tokens from `tokens.css` for consistency
-4. Update this README for new features
-
----
-
-## 📄 License
-
-This project is proprietary software for JATSC.
-
----
-
-## 👨‍💻 Author
-
-Built with Claude Code - AI-assisted full-stack development
+1. Clone repository on AirNav server
+2. Run `npm install`
+3. Run `npm run dev`
+4. Access from any device on AirNav network:
+   ```
+   http://<server-ip>:5173
+   ```
 
 ---
 
 ## 📞 Support
 
-For issues or questions:
-1. Check the inline guides in the application
-2. Review API response messages
-3. Verify threshold configurations
-4. Check browser console for frontend errors
+Check browser console (F12) for errors. Backend logs show in terminal.
 
 ---
 
-## 🎉 Version History
+## 📄 License
 
-- **v1.0.0** (2026-08-25) — Initial release
-  - Daily Check workflow with multi-equipment support
-  - History view with inline graph comparison
-  - Data Monitoring dashboard with multi-equipment graphing
-  - Configurable threshold management
-  - Multi-format export (CSV/XLSX/PDF)
-  - Real-time anomaly detection
-  - Professional design system
+Proprietary - JATSC
 
+---
+
+## 👨‍💻 Version
+
+v2.0.0 - Node.js Edition (100% JavaScript stack)
+
+Built with ❤️ for JATSC

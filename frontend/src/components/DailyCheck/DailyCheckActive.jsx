@@ -59,14 +59,56 @@ const DailyCheckActive = ({ checkId, onCheckStopped }) => {
     }
   };
 
+  const handleSaveReadings = async () => {
+    try {
+      // Save all chiller readings
+      for (const reading of chillerReadings) {
+        if (reading.location && reading.peralatan) {
+          await addReading(`/daily-check/${checkId}/reading`, {
+            equipment_type: 'chiller',
+            ...reading,
+          });
+        }
+      }
+
+      // Save all pump readings
+      for (const reading of pumpReadings) {
+        if (reading.location && reading.peralatan) {
+          await addReading(`/daily-check/${checkId}/reading`, {
+            equipment_type: 'pump',
+            ...reading,
+          });
+        }
+      }
+
+      // Save all AHU readings
+      for (const reading of ahuReadings) {
+        if (reading.location && reading.peralatan) {
+          await addReading(`/daily-check/${checkId}/reading`, {
+            equipment_type: 'ahu',
+            ...reading,
+          });
+        }
+      }
+
+      setToast({ type: 'success', message: '✅ All readings saved!' });
+      setTimeout(() => fetchCheck(), 500);
+    } catch (err) {
+      setToast({ type: 'error', message: '❌ Failed to save readings' });
+    }
+  };
+
   const handleStopCheck = async () => {
     if (!window.confirm('Stop this daily check? Make sure all data is entered.')) {
       return;
     }
 
     try {
+      // Save readings first
+      await handleSaveReadings();
+
       const stopTime = new Date().toTimeString().split(' ')[0];
-      const response = await stopCheck(`/daily-check/${checkId}/stop`, {
+      await stopCheck(`/daily-check/${checkId}/stop`, {
         stop_time: stopTime,
         notes,
       });
@@ -77,7 +119,7 @@ const DailyCheckActive = ({ checkId, onCheckStopped }) => {
       });
 
       setTimeout(() => {
-        onCheckStopped(response.daily_check_id);
+        onCheckStopped(checkId);
       }, 1000);
     } catch (err) {
       setToast({ type: 'error', message: `❌ Failed to stop check` });
@@ -186,9 +228,17 @@ const DailyCheckActive = ({ checkId, onCheckStopped }) => {
         <button
           type="button"
           className="btn btn-primary"
-          disabled={loadingStop}
+          onClick={handleSaveReadings}
+          disabled={loadingRead}
         >
-          💾 Save Draft
+          {loadingRead ? (
+            <>
+              <span className="spinner"></span>
+              Saving...
+            </>
+          ) : (
+            <>💾 Save Readings</>
+          )}
         </button>
         <button
           type="button"

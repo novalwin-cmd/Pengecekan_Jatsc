@@ -28,11 +28,11 @@ const DailyCheckStart = ({ onCheckStarted }) => {
 
       setToast({
         type: 'success',
-        message: `✅ Daily Check #${response.daily_check_id} started!`,
+        message: `✅ Daily Check #${response.data.id} started!`,
       });
 
       setTimeout(() => {
-        onCheckStarted(response.daily_check_id);
+        onCheckStarted(response.data.id);
       }, 1000);
     } catch (err) {
       setToast({
