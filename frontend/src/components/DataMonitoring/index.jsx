@@ -4,8 +4,9 @@
  */
 
 import { useState } from 'react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import GraphViewer from './GraphViewer';
-import GraphViewerMulti from './GraphViewerMulti';
 import ThresholdManager from './ThresholdManager';
 import './DataMonitoring.css';
 
@@ -46,21 +47,104 @@ const DataMonitoring = () => {
     ],
   };
 
-  const handleExportGraph = () => {
-    // Export all visible graphs
-    const containers = document.querySelectorAll('.graph-container');
-    if (containers.length === 0) return;
+  const handleExportGraph = async () => {
+    const selectedEquipmentTypes = Object.keys(selectedEquipment).filter(k => selectedEquipment[k]);
 
-    containers.forEach((container, idx) => {
-      const canvas = container.querySelector('canvas');
-      if (canvas) {
-        const link = document.createElement('a');
-        link.href = canvas.toDataURL('image/png');
-        const equipType = Object.keys(selectedEquipment).filter(k => selectedEquipment[k])[idx];
-        link.download = `graph-${equipType}-${parameter}-${timeRange}.png`;
-        link.click();
+    if (selectedEquipmentTypes.length === 0) {
+      alert('No graphs to export. Please select at least one equipment type.');
+      return;
+    }
+
+    try {
+      const timestamp = new Date().toLocaleDateString('id-ID').replace(/\//g, '-');
+      const equipmentNames = selectedEquipmentTypes
+        .map(k => k.charAt(0).toUpperCase() + k.slice(1))
+        .join('-');
+
+      // Export each graph individually
+      for (const equipType of selectedEquipmentTypes) {
+        try {
+          // Find the graph container for this equipment type
+          const allGraphs = document.querySelectorAll('.graph-viewer');
+          let targetGraph = null;
+          let graphIndex = -1;
+
+          for (let i = 0; i < allGraphs.length; i++) {
+            const graph = allGraphs[i];
+            // Check if this graph belongs to the current equipment type by looking for equipment name in title
+            const title = graph.querySelector('h3, h2, h4');
+            if (title && title.textContent.toLowerCase().includes(equipType.toLowerCase())) {
+              targetGraph = graph;
+              graphIndex = i;
+              break;
+            }
+          }
+
+          if (!targetGraph) {
+            console.warn(`Graph not found for equipment type: ${equipType}`);
+            continue;
+          }
+
+          console.log(`Exporting graph for ${equipType} (index: ${graphIndex})...`);
+
+          // Capture individual graph with better error handling
+          const canvas = await html2canvas(targetGraph, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: true,
+            timeout: 10000
+          }).catch(err => {
+            console.error(`Failed to capture ${equipType} graph:`, err);
+            throw new Error(`Failed to capture ${equipType} graph: ${err.message}`);
+          });
+
+          const image = canvas.toDataURL('image/png');
+          console.log(`✓ PNG captured for ${equipType}, size: ${(image.length / 1024).toFixed(2)}KB`);
+
+          // Download as PNG
+          const link = document.createElement('a');
+          link.href = image;
+          link.download = `graph-${equipType}-${parameter}-${timeRange}-${timestamp}.png`;
+          link.click();
+          console.log(`✓ PNG downloaded for ${equipType}`);
+
+          // Also create PDF
+          const pdf = new jsPDF('landscape', 'mm', 'a4');
+          const imgWidth = 280;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+          // Check if image height exceeds page height
+          const pageHeight = pdf.internal.pageSize.getHeight();
+          if (imgHeight > pageHeight - 40) {
+            console.warn(`Image height (${imgHeight}mm) exceeds page height, will add multiple pages`);
+            // For now, scale down to fit
+            const scaledHeight = pageHeight - 40;
+            pdf.addImage(image, 'PNG', 10, 10, imgWidth, scaledHeight);
+          } else {
+            pdf.addImage(image, 'PNG', 10, 10, imgWidth, imgHeight);
+          }
+
+          pdf.setFontSize(10);
+          pdf.text(`Equipment: ${equipType.toUpperCase()} | Parameter: ${parameter} | Range: ${timeRange}`, 10, imgHeight + 20);
+          pdf.text(`Exported: ${new Date().toLocaleString('id-ID')}`, 10, imgHeight + 25);
+          pdf.save(`graph-${equipType}-${parameter}-${timeRange}-${timestamp}.pdf`);
+          console.log(`✓ PDF saved for ${equipType}`);
+
+          // Small delay between exports to avoid issues
+          await new Promise(resolve => setTimeout(resolve, 800));
+        } catch (equipError) {
+          console.error(`Error exporting ${equipType}:`, equipError);
+          alert(`Failed to export ${equipType} graph. Check browser console for details.`);
+        }
       }
-    });
+
+      console.log('✓ Export complete');
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Failed to export graphs. Please try again. Check browser console for details.');
+    }
   };
 
   return (
@@ -143,14 +227,41 @@ const DataMonitoring = () => {
         </div>
       </div>
 
-      {/* Combined Graph Viewer - All Selected Equipment on ONE Graph */}
+      {/* Grid of Individual Graphs - One per Selected Equipment Type */}
       {Object.values(selectedEquipment).some(v => v) ? (
-        <div className="monitoring-graph">
-          <GraphViewerMulti
-            selectedEquipment={selectedEquipment}
-            parameter={parameter}
-            timeRange={timeRange}
-          />
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
+          gap: '24px',
+          marginBottom: '32px'
+        }}>
+          {selectedEquipment.chiller && (
+            <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '16px', background: 'var(--color-bg-alt)' }}>
+              <GraphViewer
+                equipmentType="chiller"
+                parameter={parameter}
+                timeRange={timeRange}
+              />
+            </div>
+          )}
+          {selectedEquipment.pump && (
+            <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '16px', background: 'var(--color-bg-alt)' }}>
+              <GraphViewer
+                equipmentType="pump"
+                parameter={parameter}
+                timeRange={timeRange}
+              />
+            </div>
+          )}
+          {selectedEquipment.ahu && (
+            <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '16px', background: 'var(--color-bg-alt)' }}>
+              <GraphViewer
+                equipmentType="ahu"
+                parameter={parameter}
+                timeRange={timeRange}
+              />
+            </div>
+          )}
         </div>
       ) : (
         <div style={{

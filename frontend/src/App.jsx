@@ -4,7 +4,7 @@
  * Simplified to Daily Check workflow with History and Monitoring
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Shell from './components/Layout/Shell';
 import HistoryList from './components/History/HistoryList';
 import HistoryDetail from './components/History/HistoryDetail';
@@ -13,6 +13,9 @@ import DataMonitoring from './components/DataMonitoring';
 import Toast from './components/Toast';
 import { VIEWS } from './config/constants';
 import './App.css';
+
+// Import debug utilities - loads in browser console
+import './utils/exportDebug';
 
 function App() {
   const [currentView, setCurrentView] = useState(VIEWS.DAILY_CHECK);

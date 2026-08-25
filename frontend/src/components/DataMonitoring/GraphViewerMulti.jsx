@@ -4,6 +4,8 @@
  */
 
 import { useState, useEffect } from 'react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   ReferenceLine
@@ -127,16 +129,90 @@ const GraphViewerMulti = ({ selectedEquipment, parameter, timeRange }) => {
   }
 
   if (data.length === 0) {
+    const selectedEquipmentList = Object.keys(selectedEquipment)
+      .filter(k => selectedEquipment[k])
+      .join(', ');
+
     return (
       <div className="graph-empty">
-        <p>📭 No data available for selected equipment and time range</p>
+        <p>📭 No data available</p>
+        <small>
+          Equipment: {selectedEquipmentList || 'None selected'} |
+          Parameter: {parameter} |
+          Time Range: {timeRange}
+        </small>
+        <p style={{ fontSize: '12px', color: '#666', marginTop: '12px' }}>
+          💡 Tips:
+          <br />• Ensure you have recorded readings in Daily Check for selected equipment
+          <br />• Try a longer time range (yearly instead of monthly)
+          <br />• Check if threshold data exists for the selected parameter
+        </p>
       </div>
     );
   }
 
+  const handleExportGraph = async () => {
+    const graphContainer = document.querySelector('.graph-viewer');
+    if (!graphContainer) return;
+
+    try {
+      const equipmentNames = Object.keys(selectedEquipment)
+        .filter(k => selectedEquipment[k])
+        .map(k => k.charAt(0).toUpperCase() + k.slice(1))
+        .join('-');
+
+      const timestamp = new Date().toLocaleDateString('id-ID').replace(/\//g, '-');
+
+      // Capture graph as image
+      const canvas = await html2canvas(graphContainer, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      });
+
+      const image = canvas.toDataURL('image/png');
+
+      // Download as PNG
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = `graph-${equipmentNames}-${parameter}-${timeRange}-${timestamp}.png`;
+      link.click();
+
+      // Also create PDF
+      const pdf = new jsPDF('landscape', 'mm', 'a4');
+      const imgWidth = 280;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      pdf.addImage(image, 'PNG', 10, 10, imgWidth, imgHeight);
+      pdf.text(`Equipment: ${equipmentNames} | Parameter: ${parameter} | Range: ${timeRange}`, 10, imgHeight + 20);
+      pdf.text(`Exported: ${new Date().toLocaleString('id-ID')}`, 10, imgHeight + 25);
+      pdf.save(`graph-${equipmentNames}-${parameter}-${timeRange}-${timestamp}.pdf`);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Failed to export graph. Please try again.');
+    }
+  };
+
   return (
     <div className="graph-viewer">
-      <h3 style={{ marginTop: 0 }}>📈 Multi-Equipment Comparison</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h3 style={{ margin: 0 }}>📈 Multi-Equipment Comparison</h3>
+        <button
+          onClick={handleExportGraph}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#0284C7',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}
+        >
+          📥 Export (PNG + PDF)
+        </button>
+      </div>
 
       <div className="graph-container">
         <ResponsiveContainer width="100%" height={400}>

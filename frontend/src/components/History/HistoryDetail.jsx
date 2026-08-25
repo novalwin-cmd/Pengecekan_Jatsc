@@ -5,6 +5,8 @@
  */
 
 import { useEffect, useState } from 'react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useApiGet } from '../../hooks/useApi';
 import './History.css';
@@ -84,6 +86,72 @@ const HistoryDetail = ({ recordId, onClose }) => {
 
   const graphData = getGraphData();
 
+  const handleExportHistoryGraph = async () => {
+    const graphContainer = document.querySelector('.history-graph-container');
+    if (!graphContainer) {
+      alert('Graph not found. Please ensure the graph is visible on screen.');
+      return;
+    }
+
+    try {
+      const equipmentNames = Object.keys(selectedEquipment)
+        .filter(k => selectedEquipment[k])
+        .map(k => k.charAt(0).toUpperCase() + k.slice(1))
+        .join('-');
+
+      const timestamp = new Date().toLocaleDateString('id-ID').replace(/\//g, '-');
+
+      console.log(`Exporting history graph for check #${data.id}...`);
+
+      // Capture graph as image with better error handling
+      const canvas = await html2canvas(graphContainer, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: true,
+        timeout: 10000
+      }).catch(err => {
+        console.error('Failed to capture graph:', err);
+        throw new Error(`Failed to capture graph: ${err.message}`);
+      });
+
+      const image = canvas.toDataURL('image/png');
+      console.log(`✓ PNG captured, size: ${(image.length / 1024).toFixed(2)}KB`);
+
+      // Download as PNG
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = `history-graph-check${data.id}-${equipmentNames}-${timestamp}.png`;
+      link.click();
+      console.log(`✓ PNG downloaded`);
+
+      // Also create PDF with better sizing
+      const pdf = new jsPDF('landscape', 'mm', 'a4');
+      const imgWidth = 280;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      // Check if image height exceeds page height
+      if (imgHeight > pageHeight - 40) {
+        console.warn(`Image height (${imgHeight}mm) exceeds page height, scaling down...`);
+        const scaledHeight = pageHeight - 40;
+        pdf.addImage(image, 'PNG', 10, 10, imgWidth, scaledHeight);
+      } else {
+        pdf.addImage(image, 'PNG', 10, 10, imgWidth, imgHeight);
+      }
+
+      pdf.setFontSize(10);
+      pdf.text(`Check #${data.id} | Equipment: ${equipmentNames} | Date: ${new Date(data.date).toLocaleDateString('id-ID')}`, 10, imgHeight + 20);
+      pdf.text(`Exported: ${new Date().toLocaleString('id-ID')}`, 10, imgHeight + 25);
+      pdf.save(`history-graph-check${data.id}-${equipmentNames}-${timestamp}.pdf`);
+      console.log(`✓ PDF saved`);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert(`Failed to export graph. Error: ${error.message}\n\nCheck browser console (F12) for more details.`);
+    }
+  };
+
   return (
     <div className="history-detail">
       <div className="history-detail-header">
@@ -125,7 +193,24 @@ const HistoryDetail = ({ recordId, onClose }) => {
       {/* Inline Graph Section */}
       {readings.length > 0 && (
         <div className="detail-section">
-          <h4 className="detail-section-title">📈 Voltage Readings Graph (Multi-Equipment)</h4>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h4 className="detail-section-title" style={{ margin: 0 }}>📈 Voltage Readings Graph (Multi-Equipment)</h4>
+            <button
+              onClick={handleExportHistoryGraph}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#0284C7',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: '500'
+              }}
+            >
+              📥 Export (PNG + PDF)
+            </button>
+          </div>
 
           {/* Equipment Multi-Select */}
           <div style={{ marginBottom: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
@@ -160,7 +245,7 @@ const HistoryDetail = ({ recordId, onClose }) => {
 
           {/* Graph with Multiple Equipment Lines */}
           {graphData.length > 0 && (selectedEquipment.chiller || selectedEquipment.pump || selectedEquipment.ahu) ? (
-            <div style={{ width: '100%', height: '350px', marginBottom: '16px' }}>
+            <div className="history-graph-container" style={{ width: '100%', height: '350px', marginBottom: '16px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={graphData}>
                   <CartesianGrid strokeDasharray="3 3" />
