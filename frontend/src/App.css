@@ -1,0 +1,18 @@
+/* ========================================
+   APP STYLES
+   Application-level styling
+   ======================================== */
+
+/* Root app container */
+#app {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure app takes full viewport */
+body {
+  margin: 0;
+  padding: 0;
+}
