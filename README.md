@@ -119,18 +119,40 @@ npm install
 
 ### Running the Application
 
-#### Start Backend
+#### Option 1: Start Everything with One Command (Recommended)
+```bash
+./START.sh
+```
+
+This will:
+- ✅ Start Backend on http://127.0.0.1:5000
+- ✅ Start Frontend on http://localhost:5173
+- ✅ Wait for both services to be ready
+- ✅ Show URLs and logs
+
+#### Option 2: Start Backend and Frontend Separately
+
+**Start Backend**
 ```bash
 cd backend
 python3 app.py
 # Backend runs on http://127.0.0.1:5000
 ```
 
-#### Start Frontend (new terminal)
+**Start Frontend (in new terminal)**
 ```bash
 cd frontend
 npm run dev
 # Frontend runs on http://localhost:5173
+```
+
+#### Option 3: Use Individual Start Scripts
+```bash
+# Terminal 1
+./START_BACKEND.sh
+
+# Terminal 2
+./START_FRONTEND.sh
 ```
 
 ---
