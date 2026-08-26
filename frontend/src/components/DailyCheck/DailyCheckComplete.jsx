@@ -7,7 +7,9 @@ import { useState, useEffect } from 'react';
 import { useApiGet } from '../../hooks/useApi';
 import { useExport } from '../../hooks/useExport';
 import Toast from '../Toast';
+import MonitoringGraphs from './MonitoringGraphs';
 import './DailyCheck.css';
+import './MonitoringGraphs.css';
 
 const DailyCheckComplete = ({ checkId, onNewCheck, onEdit }) => {
   const [check, setCheck] = useState(null);
@@ -152,6 +154,11 @@ const DailyCheckComplete = ({ checkId, onNewCheck, onEdit }) => {
           )}
         </div>
       </div>
+
+      {/* Monitoring Graphs - All Parameters */}
+      {check.readings && check.readings.length > 0 && (
+        <MonitoringGraphs readings={check.readings} />
+      )}
 
       {/* Personnel List */}
       {personnelCount > 0 && (

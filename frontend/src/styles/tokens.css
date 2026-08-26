@@ -6,28 +6,28 @@
 :root {
   /* ========== COLOR PALETTE ========== */
 
-  /* Primary Colors - JATSC Brand */
-  --color-primary: #0284C7;        /* Electric Blue */
-  --color-primary-light: #38BDF8;  /* Cyan */
-  --color-primary-dark: #0369A1;   /* Darker Blue */
+  /* Primary Colors - Dark Aegean & Denim (Eye-Friendly) */
+  --color-primary: #1B4A5C;        /* Dark Teal/Denim */
+  --color-primary-light: #2D8B94;  /* Deep Aegean */
+  --color-primary-dark: #0F2D37;   /* Very Dark Teal */
 
-  /* Semantic Colors */
-  --color-success: #10B981;        /* Emerald Green */
-  --color-success-light: #D1FAE5;
-  --color-warning: #F59E0B;        /* Amber */
-  --color-warning-light: #FEF3C7;
-  --color-error: #EF4444;          /* Crimson Red */
-  --color-error-light: #FEE2E2;
+  /* Semantic Colors - Darker Theme */
+  --color-success: #2D8B94;        /* Deep Aegean */
+  --color-success-light: #1B4A5C;
+  --color-warning: #2D8B94;        /* Deep Aegean */
+  --color-warning-light: #1B4A5C;
+  --color-error: #1B4A5C;          /* Dark Teal */
+  --color-error-light: #2D5A6B;
 
-  /* Neutral Colors */
-  --color-text: #1F2937;           /* Dark Gray - Main Text */
-  --color-text-muted: #6B7280;     /* Medium Gray - Secondary Text */
-  --color-text-light: #F3F4F6;     /* Off-white - Light Text */
-  --color-bg: #FFFFFF;             /* White Background */
-  --color-bg-alt: #F9FAFB;         /* Light Gray Background */
-  --color-bg-dark: #111827;        /* Dark Background (dark mode) */
-  --color-border: #E5E7EB;         /* Light Border */
-  --color-border-dark: #D1D5DB;    /* Darker Border */
+  /* Neutral Colors - Dark Aegean & Denim (Eye-Comfortable) */
+  --color-text: #FFFFFF;           /* White Text (high contrast) */
+  --color-text-muted: #B8D4DC;     /* Light Teal Text */
+  --color-text-light: #E0F0F4;     /* Very Light Teal Text */
+  --color-bg: #1B4A5C;             /* Dark Teal Background */
+  --color-bg-alt: #253E50;         /* Darker Teal Background */
+  --color-bg-dark: #0F2D37;        /* Very Dark Teal (dark mode) */
+  --color-border: #2D8B94;         /* Deep Aegean Border */
+  --color-border-dark: #1B4A5C;    /* Dark Teal Border */
 
   /* ========== TYPOGRAPHY ========== */
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -94,12 +94,12 @@
 /* ========== DARK MODE ========== */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-text: #F3F4F6;
-    --color-text-muted: #9CA3AF;
-    --color-bg: #1F2937;
-    --color-bg-alt: #111827;
-    --color-border: #374151;
-    --color-border-dark: #4B5563;
+    --color-text: #FFFFFF;
+    --color-text-muted: #B8D4DC;
+    --color-bg: #0F2D37;
+    --color-bg-alt: #1B4A5C;
+    --color-border: #2D8B94;
+    --color-border-dark: #2D8B94;
   }
 }
 
@@ -115,10 +115,10 @@
 
 /* ========== LIGHT MODE EXPLICIT ========== */
 :root[data-theme="light"] {
-  --color-text: #1F2937;
-  --color-text-muted: #6B7280;
-  --color-bg: #FFFFFF;
-  --color-bg-alt: #F9FAFB;
-  --color-border: #E5E7EB;
-  --color-border-dark: #D1D5DB;
+  --color-text: #FFFFFF;
+  --color-text-muted: #B8D4DC;
+  --color-bg: #1B4A5C;
+  --color-bg-alt: #253E50;
+  --color-border: #2D8B94;
+  --color-border-dark: #1B4A5C;
 }

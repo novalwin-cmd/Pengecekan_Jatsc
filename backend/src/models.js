@@ -28,7 +28,7 @@ export const DailyCheck = sequelize.define('DailyCheck', {
     allowNull: false
   },
   shift: {
-    type: DataTypes.STRING,
+    type: DataTypes.ENUM('Morning', 'Night'),
     allowNull: false,
     defaultValue: 'Morning'
   },
@@ -43,6 +43,12 @@ export const DailyCheck = sequelize.define('DailyCheck', {
   status: {
     type: DataTypes.ENUM('active', 'completed'),
     defaultValue: 'active'
+  },
+  // NEW: Concept type for this session
+  concept_type: {
+    type: DataTypes.ENUM('Inspection', 'Preventive', 'Corrective'),
+    allowNull: false,
+    defaultValue: 'Inspection'
   },
   notes: {
     type: DataTypes.TEXT,
@@ -85,6 +91,7 @@ export const DailyCheckPersonnel = sequelize.define('DailyCheckPersonnel', {
 });
 
 // Daily Check Reading Model
+// Supports all 4 logsheet categories with complete parameters
 export const DailyCheckReading = sequelize.define('DailyCheckReading', {
   id: {
     type: DataTypes.INTEGER,
@@ -96,9 +103,11 @@ export const DailyCheckReading = sequelize.define('DailyCheckReading', {
     allowNull: false,
     references: { model: 'daily_checks', key: 'id' }
   },
+  // ===== BASIC INFO =====
   equipment_type: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    comment: 'Category: beban_listrik, sts, ups, mds'
   },
   location: {
     type: DataTypes.STRING,
@@ -106,37 +115,112 @@ export const DailyCheckReading = sequelize.define('DailyCheckReading', {
   },
   peralatan: {
     type: DataTypes.STRING,
+    allowNull: true,
+    comment: 'Equipment name'
+  },
+  // ===== CONCEPT TYPE =====
+  concept_type: {
+    type: DataTypes.ENUM('Inspection', 'Preventive', 'Corrective'),
+    allowNull: false,
+    defaultValue: 'Inspection'
+  },
+  // ===== STATUS =====
+  status: {
+    type: DataTypes.ENUM('NORMAL', 'U/S', 'GANGGUAN', 'PERBAIKAN'),
     allowNull: true
   },
-  R: {
-    type: DataTypes.FLOAT,
+  switch_status: {
+    type: DataTypes.ENUM('ON', 'STANDBY', 'OFF'),
     allowNull: true
   },
-  S: {
-    type: DataTypes.FLOAT,
-    allowNull: true
-  },
-  T: {
-    type: DataTypes.FLOAT,
-    allowNull: true
-  },
-  in_temp: {
-    type: DataTypes.FLOAT,
-    allowNull: true
-  },
-  out_temp: {
-    type: DataTypes.FLOAT,
-    allowNull: true
-  },
-  keterangan: {
+
+  // ========== BEBAN LISTRIK PARAMETERS ==========
+  // Tegangan
+  tegangan_r: { type: DataTypes.FLOAT, allowNull: true },
+  tegangan_s: { type: DataTypes.FLOAT, allowNull: true },
+  tegangan_t: { type: DataTypes.FLOAT, allowNull: true },
+  // Arus
+  arus_r: { type: DataTypes.FLOAT, allowNull: true },
+  arus_s: { type: DataTypes.FLOAT, allowNull: true },
+  arus_t: { type: DataTypes.FLOAT, allowNull: true },
+  // Lainnya
+  cos_phi: { type: DataTypes.FLOAT, allowNull: true },
+  kwh: { type: DataTypes.FLOAT, allowNull: true },
+  suhu: { type: DataTypes.FLOAT, allowNull: true },
+
+  // ========== STS PARAMETERS ==========
+  frekuensi: { type: DataTypes.FLOAT, allowNull: true },
+
+  // ========== UPS PARAMETERS ==========
+  // Rectifier
+  rectifier_i_in: { type: DataTypes.STRING, allowNull: true },
+  rectifier_v_in: { type: DataTypes.STRING, allowNull: true },
+  arus_rectifier: { type: DataTypes.FLOAT, allowNull: true },
+  // Inverter
+  inverter_v_out: { type: DataTypes.STRING, allowNull: true },
+  inverter_i_out: { type: DataTypes.STRING, allowNull: true },
+  arus_inverter: { type: DataTypes.FLOAT, allowNull: true },
+  // Bypass
+  tegangan_bypass: { type: DataTypes.FLOAT, allowNull: true },
+  // Thermal
+  temp_power: { type: DataTypes.FLOAT, allowNull: true },
+  temp_room: { type: DataTypes.FLOAT, allowNull: true },
+  temp_battery: { type: DataTypes.FLOAT, allowNull: true },
+  // Battery
+  floating_voltage: { type: DataTypes.FLOAT, allowNull: true },
+  arus_battery: { type: DataTypes.FLOAT, allowNull: true },
+  kapasitas_battery: { type: DataTypes.FLOAT, allowNull: true },
+
+  // ========== MDS PARAMETERS ==========
+  // Temperature per phase (separate from general suhu)
+  suhu_r: { type: DataTypes.FLOAT, allowNull: true },
+  suhu_s: { type: DataTypes.FLOAT, allowNull: true },
+  suhu_t: { type: DataTypes.FLOAT, allowNull: true },
+
+  // ========== LEGACY PARAMETERS (Keep for backward compatibility) ==========
+  R: { type: DataTypes.FLOAT, allowNull: true },
+  S: { type: DataTypes.FLOAT, allowNull: true },
+  T: { type: DataTypes.FLOAT, allowNull: true },
+  in_temp: { type: DataTypes.FLOAT, allowNull: true },
+  out_temp: { type: DataTypes.FLOAT, allowNull: true },
+  keterangan: { type: DataTypes.TEXT, allowNull: true },
+
+  // ===== CONCEPT-SPECIFIC DESCRIPTION FIELDS =====
+  // Preventive
+  maintenance_description: {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  // Corrective
+  issue_before_description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  result_after_description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+
+  // ===== ANOMALY DETECTION =====
   anomaly_detected: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
   anomaly_reason: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+
+  // ===== GOOGLE SHEETS SYNC =====
+  google_sheet_url: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  synced_to_sheet: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  sheet_sync_error: {
     type: DataTypes.TEXT,
     allowNull: true
   }
@@ -213,15 +297,21 @@ DailyCheckReading.belongsTo(DailyCheck, {
 
 export async function initializeDatabase() {
   try {
-    // Force sync to recreate all tables fresh
+    // Sync models to database (recreate with new schema)
     await sequelize.sync({ force: true });
-    console.log('✅ Database initialized');
+    console.log('✅ Database synced');
 
     // Seed default thresholds if empty
-    const thresholdCount = await Threshold.count();
-    if (thresholdCount === 0) {
-      await seedThresholds();
+    try {
+      const thresholdCount = await Threshold.count();
+      if (thresholdCount === 0) {
+        await seedThresholds();
+      }
+    } catch (err) {
+      console.log('⚠️  Threshold check/seed skipped:', err.message);
     }
+
+    console.log('✅ Database initialized');
   } catch (error) {
     console.error('❌ Database initialization error:', error);
     throw error;

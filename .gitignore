@@ -46,3 +46,4 @@ npm-debug.log*
 
 # Cache
 .cache/
+backend/jatsc-inspection-credentials.json

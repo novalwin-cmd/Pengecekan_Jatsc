@@ -1,5 +1,6 @@
 import { DailyCheck, DailyCheckPersonnel, DailyCheckReading, Threshold } from './models.js';
 import { Op } from 'sequelize';
+import { validateReadingByConceptType, syncReadingToSheet } from './services/googleSheetsService.js';
 
 export function setupRoutes(app) {
   // ========================================================================
@@ -78,6 +79,7 @@ export function setupRoutes(app) {
           start_time: check.start_time,
           stop_time: check.stop_time,
           status: check.status,
+          concept_type: check.concept_type, // NEW
           notes: check.notes,
           personnel: check.personnel,
           readings: check.readings,
@@ -95,17 +97,18 @@ export function setupRoutes(app) {
   // Start new daily check
   app.post('/api/daily-check/start', async (req, res) => {
     try {
-      const { date, shift, start_time, notes } = req.body;
+      const { date, shift, start_time, notes, concept_type } = req.body;
 
       const check = await DailyCheck.create({
         date: date || new Date().toISOString().split('T')[0],
         shift: shift || 'Morning',
         start_time: start_time || new Date().toTimeString().slice(0, 8),
         status: 'active',
+        concept_type: concept_type || 'Inspection', // NEW: Store concept type
         notes: notes || ''
       });
 
-      res.json({ data: { id: check.id }, success: true });
+      res.json({ data: { id: check.id, concept_type: check.concept_type }, success: true });
     } catch (error) {
       console.error('Error starting daily check:', error);
       res.status(500).json({ error: error.message, success: false });
@@ -175,7 +178,42 @@ export function setupRoutes(app) {
   // Add reading
   app.post('/api/daily-check/:id/reading', async (req, res) => {
     try {
-      const { equipment_type, location, peralatan, R, S, T, in_temp, out_temp, keterangan } = req.body;
+      // Handle both Indonesian and English field names
+      const {
+        equipment_type,
+        category,
+        peralatan,
+        // Concept & descriptions (NEW)
+        concept_type = 'Inspection',
+        maintenance_description,
+        issue_before_description,
+        result_after_description,
+      } = req.body;
+
+      // Map Indonesian field names to database column names
+      let R = req.body.R || parseFloat(req.body.tegangan_r) || null;
+      let S = req.body.S || parseFloat(req.body.tegangan_s) || null;
+      let T = req.body.T || parseFloat(req.body.tegangan_t) || null;
+      let in_temp = req.body.in_temp || parseFloat(req.body.suhu_masuk) || parseFloat(req.body.temp_in) || null;
+      let out_temp = req.body.out_temp || parseFloat(req.body.suhu_keluar) || parseFloat(req.body.temp_out) || null;
+      let keterangan = req.body.keterangan || req.body.catatan || '';
+      let location = req.body.location || '';
+
+      // Validate concept type based on provided descriptions
+      const validation = validateReadingByConceptType({
+        equipment_type,
+        concept_type,
+        maintenance_description,
+        issue_before_description,
+        result_after_description
+      });
+
+      if (!validation.valid) {
+        return res.status(400).json({
+          error: validation.errors.join('; '),
+          success: false
+        });
+      }
 
       // Check thresholds for anomaly detection
       let anomaly_detected = false;
@@ -208,11 +246,19 @@ export function setupRoutes(app) {
         }
       }
 
-      const reading = await DailyCheckReading.create({
+      // Create reading with concept type and descriptions
+      const readingData = {
         daily_check_id: req.params.id,
-        equipment_type,
+        equipment_type: equipment_type || category,
         location,
         peralatan,
+        status: req.body.status || null,
+        switch_status: req.body.switch_status || null,
+        concept_type,
+        maintenance_description,
+        issue_before_description,
+        result_after_description,
+        // Legacy fields
         R: parseFloat(R) || null,
         S: parseFloat(S) || null,
         T: parseFloat(T) || null,
@@ -220,8 +266,71 @@ export function setupRoutes(app) {
         out_temp: parseFloat(out_temp) || null,
         keterangan,
         anomaly_detected,
-        anomaly_reason
-      });
+        anomaly_reason,
+        synced_to_sheet: false,
+
+        // BEBAN LISTRIK - Tegangan
+        tegangan_r: parseFloat(req.body.tegangan_r) || null,
+        tegangan_s: parseFloat(req.body.tegangan_s) || null,
+        tegangan_t: parseFloat(req.body.tegangan_t) || null,
+        // BEBAN LISTRIK - Arus
+        arus_r: parseFloat(req.body.arus_r) || null,
+        arus_s: parseFloat(req.body.arus_s) || null,
+        arus_t: parseFloat(req.body.arus_t) || null,
+        // BEBAN LISTRIK - Lainnya
+        cos_phi: parseFloat(req.body.cos_phi) || null,
+        kwh: parseFloat(req.body.kwh) || null,
+        suhu: parseFloat(req.body.suhu) || parseFloat(req.body.suhu_input) || null,
+        suhu_masuk: parseFloat(req.body.suhu_masuk) || null,
+        suhu_keluar: parseFloat(req.body.suhu_keluar) || null,
+
+        // STS PARAMETERS
+        frekuensi: parseFloat(req.body.frekuensi) || null,
+
+        // UPS PARAMETERS
+        rectifier_i_in: req.body.rectifier_i_in || null,
+        rectifier_v_in: req.body.rectifier_v_in || null,
+        arus_rectifier: parseFloat(req.body.arus_rectifier) || null,
+        inverter_v_out: req.body.inverter_v_out || null,
+        inverter_i_out: req.body.inverter_i_out || null,
+        arus_inverter: parseFloat(req.body.arus_inverter) || null,
+        tegangan_bypass: parseFloat(req.body.tegangan_bypass) || null,
+        temp_power: parseFloat(req.body.temp_power) || null,
+        temp_room: parseFloat(req.body.temp_room) || null,
+        temp_battery: parseFloat(req.body.temp_battery) || null,
+        floating_voltage: parseFloat(req.body.floating_voltage) || null,
+        arus_battery: parseFloat(req.body.arus_battery) || null,
+        kapasitas_battery: parseFloat(req.body.kapasitas_battery) || null,
+
+        // MDS PARAMETERS - Temperature per phase
+        suhu_r: parseFloat(req.body.suhu_r) || null,
+        suhu_s: parseFloat(req.body.suhu_s) || null,
+        suhu_t: parseFloat(req.body.suhu_t) || null,
+      };
+
+      const reading = await DailyCheckReading.create(readingData);
+
+      // Attempt to sync to Google Sheets (background, non-blocking)
+      try {
+        const dailyCheck = await DailyCheck.findByPk(req.params.id);
+        const syncResult = await syncReadingToSheet(reading, dailyCheck, category);
+        if (syncResult.success) {
+          await reading.update({
+            synced_to_sheet: true,
+            google_sheet_url: syncResult.sheet_name
+          });
+        } else {
+          await reading.update({
+            sheet_sync_error: syncResult.error
+          });
+        }
+      } catch (sheetError) {
+        console.warn('⚠️ Non-blocking Google Sheets sync error:', sheetError.message);
+        // Don't fail the reading creation if sheets sync fails
+        await reading.update({
+          sheet_sync_error: sheetError.message
+        });
+      }
 
       res.json({ data: reading, success: true });
     } catch (error) {
@@ -320,11 +429,7 @@ export function setupRoutes(app) {
 
       const readings = await DailyCheckReading.findAll({
         where,
-        attributes: [
-          'id', 'equipment_type', 'location', 'peralatan',
-          'R', 'S', 'T', 'in_temp', 'out_temp', 'createdAt',
-          'anomaly_detected'
-        ],
+        raw: true,
         order: [['createdAt', 'DESC']],
         limit: 1000
       });

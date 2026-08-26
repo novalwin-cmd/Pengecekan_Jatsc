@@ -13,6 +13,7 @@ const DailyCheckStart = ({ onCheckStarted }) => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [shift, setShift] = useState(SHIFTS.MORNING);
   const [startTime, setStartTime] = useState(new Date().toTimeString().split(' ')[0]);
+  const [conceptType, setConceptType] = useState('Inspection'); // NEW: Concept selection
   const [toast, setToast] = useState(null);
   const { loading, post } = useApiPost();
 
@@ -24,11 +25,12 @@ const DailyCheckStart = ({ onCheckStarted }) => {
         date,
         shift,
         start_time: startTime,
+        concept_type: conceptType, // NEW: Pass concept type
       });
 
       setToast({
         type: 'success',
-        message: `✅ Daily Check #${response.data.id} started!`,
+        message: `✅ Daily Check #${response.data.id} started (${conceptType})!`,
       });
 
       setTimeout(() => {
@@ -85,6 +87,26 @@ const DailyCheckStart = ({ onCheckStarted }) => {
               onChange={(e) => setStartTime(e.target.value)}
               required
             />
+          </div>
+
+          {/* NEW: Concept Type Selection */}
+          <div className="form-group">
+            <label htmlFor="concept">Jenis Pengecekan</label>
+            <select
+              id="concept"
+              value={conceptType}
+              onChange={(e) => setConceptType(e.target.value)}
+              required
+            >
+              <option value="Inspection">🔍 Inspeksi (Monitoring Rutin)</option>
+              <option value="Preventive">🛠️ Preventive (Pemeliharaan Berkala)</option>
+              <option value="Corrective">⚙️ Corrective (Perbaikan/Gangguan)</option>
+            </select>
+            <small className="help-text">
+              {conceptType === 'Inspection' && 'Monitoring standar kondisi operasional tanpa keterangan tambahan'}
+              {conceptType === 'Preventive' && 'Pemeliharaan berkala dengan penjelasan kegiatan pemeliharaan'}
+              {conceptType === 'Corrective' && 'Perbaikan gangguan dengan penjelasan sebelum dan sesudah'}
+            </small>
           </div>
 
           <button

@@ -49,23 +49,32 @@ h6 {
   font-weight: var(--font-weight-semibold);
   line-height: var(--line-height-tight);
   color: var(--color-text);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  text-wrap: balance;
+  letter-spacing: -0.02em;
 }
 
 h1 {
   font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-xl);
 }
 
 h2 {
   font-size: var(--font-size-xl);
+  margin-bottom: var(--spacing-lg);
 }
 
 h3 {
   font-size: var(--font-size-lg);
+  margin-bottom: var(--spacing-md);
 }
 
 p {
   margin-bottom: var(--spacing-md);
+  line-height: var(--line-height-relaxed);
+  letter-spacing: 0.3px;
+  color: var(--color-text);
 }
 
 a {

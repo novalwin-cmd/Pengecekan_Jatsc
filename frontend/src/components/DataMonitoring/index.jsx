@@ -11,21 +11,14 @@ import ThresholdManager from './ThresholdManager';
 import './DataMonitoring.css';
 
 const DataMonitoring = () => {
-  const [selectedEquipment, setSelectedEquipment] = useState({
+  // ALWAYS show all equipment - no selection needed
+  const selectedEquipment = {
     chiller: true,
     pump: true,
     ahu: true
-  });
-  const [parameter, setParameter] = useState('voltage_R');
+  };
   const [timeRange, setTimeRange] = useState('month');
   const [showThresholds, setShowThresholds] = useState(false);
-
-  const handleEquipmentToggle = (type) => {
-    setSelectedEquipment(prev => ({
-      ...prev,
-      [type]: !prev[type]
-    }));
-  };
 
   const parameters = {
     chiller: [
@@ -48,95 +41,95 @@ const DataMonitoring = () => {
   };
 
   const handleExportGraph = async () => {
-    const selectedEquipmentTypes = Object.keys(selectedEquipment).filter(k => selectedEquipment[k]);
-
-    if (selectedEquipmentTypes.length === 0) {
-      alert('No graphs to export. Please select at least one equipment type.');
-      return;
-    }
+    // Export ALL equipment types
+    const allEquipmentTypes = ['chiller', 'pump', 'ahu'];
+    const allParameters = {
+      chiller: ['voltage_R', 'voltage_S', 'voltage_T', 'temp_in', 'temp_out'],
+      pump: ['voltage_R', 'voltage_S', 'voltage_T'],
+      ahu: ['voltage_R', 'voltage_S', 'voltage_T']
+    };
 
     try {
       const timestamp = new Date().toLocaleDateString('id-ID').replace(/\//g, '-');
-      const equipmentNames = selectedEquipmentTypes
-        .map(k => k.charAt(0).toUpperCase() + k.slice(1))
-        .join('-');
 
       // Export each graph individually
-      for (const equipType of selectedEquipmentTypes) {
-        try {
-          // Find the graph container for this equipment type
-          const allGraphs = document.querySelectorAll('.graph-viewer');
-          let targetGraph = null;
-          let graphIndex = -1;
+      for (const equipType of allEquipmentTypes) {
+        for (const param of allParameters[equipType]) {
+          try {
+            // Find the graph container for this equipment type and parameter
+            const allGraphs = document.querySelectorAll('.graph-viewer');
+            let targetGraph = null;
 
-          for (let i = 0; i < allGraphs.length; i++) {
-            const graph = allGraphs[i];
-            // Check if this graph belongs to the current equipment type by looking for equipment name in title
-            const title = graph.querySelector('h3, h2, h4');
-            if (title && title.textContent.toLowerCase().includes(equipType.toLowerCase())) {
-              targetGraph = graph;
-              graphIndex = i;
-              break;
+            for (let i = 0; i < allGraphs.length; i++) {
+              const graph = allGraphs[i];
+              const titleElement = graph.querySelector('h3, h2, h4');
+              const title = titleElement ? titleElement.textContent.toLowerCase() : '';
+
+              // Check if this graph belongs to the current equipment type AND parameter
+              const equipmentMatch = title.includes(equipType.toLowerCase());
+              const paramMatch = title.includes(param.replace('_', ' ').toLowerCase());
+
+              if (equipmentMatch && paramMatch) {
+                targetGraph = graph;
+                break;
+              }
             }
+
+            if (!targetGraph) {
+              console.warn(`Graph not found for ${equipType} - ${param}`);
+              continue;
+            }
+
+            console.log(`Exporting graph for ${equipType} - ${param}...`);
+
+            // Capture individual graph with better error handling
+            const canvas = await html2canvas(targetGraph, {
+              scale: 2,
+              useCORS: true,
+              allowTaint: true,
+              backgroundColor: '#ffffff',
+              logging: true,
+              timeout: 10000
+            }).catch(err => {
+              console.error(`Failed to capture ${equipType}-${param} graph:`, err);
+              throw new Error(`Failed to capture ${equipType}-${param} graph: ${err.message}`);
+            });
+
+            const image = canvas.toDataURL('image/png');
+            console.log(`✓ PNG captured for ${equipType}-${param}, size: ${(image.length / 1024).toFixed(2)}KB`);
+
+            // Download as PNG
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = `graph-${equipType}-${param}-${timeRange}-${timestamp}.png`;
+            link.click();
+            console.log(`✓ PNG downloaded for ${equipType}-${param}`);
+
+            // Also create PDF
+            const pdf = new jsPDF('landscape', 'mm', 'a4');
+            const imgWidth = 280;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+            // Check if image height exceeds page height
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            if (imgHeight > pageHeight - 40) {
+              const scaledHeight = pageHeight - 40;
+              pdf.addImage(image, 'PNG', 10, 10, imgWidth, scaledHeight);
+            } else {
+              pdf.addImage(image, 'PNG', 10, 10, imgWidth, imgHeight);
+            }
+
+            pdf.setFontSize(10);
+            pdf.text(`${equipType.toUpperCase()} | ${param} | ${timeRange}`, 10, imgHeight + 20);
+            pdf.text(`Exported: ${new Date().toLocaleString('id-ID')}`, 10, imgHeight + 25);
+            pdf.save(`graph-${equipType}-${param}-${timeRange}-${timestamp}.pdf`);
+            console.log(`✓ PDF saved for ${equipType}-${param}`);
+
+            // Small delay between exports to avoid issues
+            await new Promise(resolve => setTimeout(resolve, 500));
+          } catch (paramError) {
+            console.error(`Error exporting ${equipType}-${param}:`, paramError);
           }
-
-          if (!targetGraph) {
-            console.warn(`Graph not found for equipment type: ${equipType}`);
-            continue;
-          }
-
-          console.log(`Exporting graph for ${equipType} (index: ${graphIndex})...`);
-
-          // Capture individual graph with better error handling
-          const canvas = await html2canvas(targetGraph, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            logging: true,
-            timeout: 10000
-          }).catch(err => {
-            console.error(`Failed to capture ${equipType} graph:`, err);
-            throw new Error(`Failed to capture ${equipType} graph: ${err.message}`);
-          });
-
-          const image = canvas.toDataURL('image/png');
-          console.log(`✓ PNG captured for ${equipType}, size: ${(image.length / 1024).toFixed(2)}KB`);
-
-          // Download as PNG
-          const link = document.createElement('a');
-          link.href = image;
-          link.download = `graph-${equipType}-${parameter}-${timeRange}-${timestamp}.png`;
-          link.click();
-          console.log(`✓ PNG downloaded for ${equipType}`);
-
-          // Also create PDF
-          const pdf = new jsPDF('landscape', 'mm', 'a4');
-          const imgWidth = 280;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-          // Check if image height exceeds page height
-          const pageHeight = pdf.internal.pageSize.getHeight();
-          if (imgHeight > pageHeight - 40) {
-            console.warn(`Image height (${imgHeight}mm) exceeds page height, will add multiple pages`);
-            // For now, scale down to fit
-            const scaledHeight = pageHeight - 40;
-            pdf.addImage(image, 'PNG', 10, 10, imgWidth, scaledHeight);
-          } else {
-            pdf.addImage(image, 'PNG', 10, 10, imgWidth, imgHeight);
-          }
-
-          pdf.setFontSize(10);
-          pdf.text(`Equipment: ${equipType.toUpperCase()} | Parameter: ${parameter} | Range: ${timeRange}`, 10, imgHeight + 20);
-          pdf.text(`Exported: ${new Date().toLocaleString('id-ID')}`, 10, imgHeight + 25);
-          pdf.save(`graph-${equipType}-${parameter}-${timeRange}-${timestamp}.pdf`);
-          console.log(`✓ PDF saved for ${equipType}`);
-
-          // Small delay between exports to avoid issues
-          await new Promise(resolve => setTimeout(resolve, 800));
-        } catch (equipError) {
-          console.error(`Error exporting ${equipType}:`, equipError);
-          alert(`Failed to export ${equipType} graph. Check browser console for details.`);
         }
       }
 
@@ -155,48 +148,10 @@ const DataMonitoring = () => {
         <p>View historical equipment readings with threshold analysis</p>
       </div>
 
-      {/* Controls */}
+      {/* Time Range Selection Only */}
       <div className="monitoring-controls">
         <div className="control-group">
-          <label>Select Equipment Types (Multiple)</label>
-          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-            {['chiller', 'pump', 'ahu'].map(type => (
-              <label key={type} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input
-                  type="checkbox"
-                  checked={selectedEquipment[type]}
-                  onChange={() => handleEquipmentToggle(type)}
-                />
-                <span style={{ fontSize: '16px' }}>
-                  {type === 'chiller' ? '❄️ Chiller' : type === 'pump' ? '💧 Pump' : '🌬️ AHU'}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="control-group">
-          <label htmlFor="parameter">Parameter (Same for all selected)</label>
-          <select
-            id="parameter"
-            value={parameter}
-            onChange={(e) => setParameter(e.target.value)}
-            className="control-select"
-          >
-            <optgroup label="Voltage">
-              <option value="voltage_R">Voltage R (V)</option>
-              <option value="voltage_S">Voltage S (V)</option>
-              <option value="voltage_T">Voltage T (V)</option>
-            </optgroup>
-            <optgroup label="Temperature (Chiller Only)">
-              <option value="temp_in">Temperature In (°C)</option>
-              <option value="temp_out">Temperature Out (°C)</option>
-            </optgroup>
-          </select>
-        </div>
-
-        <div className="control-group">
-          <label>Time Range</label>
+          <label>📅 Time Range</label>
           <div className="time-range-buttons">
             {[
               { value: 'month', label: 'Monthly' },
@@ -216,7 +171,7 @@ const DataMonitoring = () => {
 
         <div className="control-actions">
           <button className="btn btn-primary" onClick={handleExportGraph}>
-            📥 Export Graph
+            📥 Export All Graphs
           </button>
           <button
             className="btn btn-secondary"
@@ -227,81 +182,85 @@ const DataMonitoring = () => {
         </div>
       </div>
 
-      {/* Grid of Individual Graphs - One per Selected Equipment Type */}
-      {Object.values(selectedEquipment).some(v => v) ? (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-          gap: '24px',
-          marginBottom: '32px'
-        }}>
-          {selectedEquipment.chiller && (
-            <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '16px', background: 'var(--color-bg-alt)' }}>
-              <GraphViewer
-                equipmentType="chiller"
-                parameter={parameter}
-                timeRange={timeRange}
-              />
-            </div>
-          )}
-          {selectedEquipment.pump && (
-            <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '16px', background: 'var(--color-bg-alt)' }}>
-              <GraphViewer
-                equipmentType="pump"
-                parameter={parameter}
-                timeRange={timeRange}
-              />
-            </div>
-          )}
-          {selectedEquipment.ahu && (
-            <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '16px', background: 'var(--color-bg-alt)' }}>
-              <GraphViewer
-                equipmentType="ahu"
-                parameter={parameter}
-                timeRange={timeRange}
-              />
-            </div>
-          )}
-        </div>
-      ) : (
-        <div style={{
-          padding: '40px',
-          textAlign: 'center',
-          background: 'var(--color-bg-alt)',
-          borderRadius: '8px',
-          color: 'var(--color-text-muted)'
-        }}>
-          <p>📭 Select at least one equipment type to view graphs</p>
-        </div>
-      )}
+      {/* Grid of ALL Graphs - ALL Equipment + ALL Parameters */}
+      <div style={{ marginBottom: '32px' }}>
+        {['chiller', 'pump', 'ahu'].map(equipType => (
+          <div key={equipType} style={{ marginBottom: '32px' }}>
+            <h3 style={{ color: '#FFFFFF', marginBottom: '16px', fontSize: '1.3rem', fontWeight: '700' }}>
+              {equipType === 'chiller' ? '❄️ Chiller' : equipType === 'pump' ? '💧 Pump' : '🌬️ AHU'} - All Parameters
+            </h3>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
+              gap: '24px'
+            }}>
+              {/* Voltage R */}
+              <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '16px', background: 'var(--color-bg-alt)' }}>
+                <GraphViewer
+                  equipmentType={equipType}
+                  parameter="voltage_R"
+                  timeRange={timeRange}
+                />
+              </div>
 
-      {/* Threshold Manager - Show for all selected equipment */}
-      {showThresholds && Object.values(selectedEquipment).some(v => v) && (
+              {/* Voltage S */}
+              <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '16px', background: 'var(--color-bg-alt)' }}>
+                <GraphViewer
+                  equipmentType={equipType}
+                  parameter="voltage_S"
+                  timeRange={timeRange}
+                />
+              </div>
+
+              {/* Voltage T */}
+              <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '16px', background: 'var(--color-bg-alt)' }}>
+                <GraphViewer
+                  equipmentType={equipType}
+                  parameter="voltage_T"
+                  timeRange={timeRange}
+                />
+              </div>
+
+              {/* Temperature (Chiller Only) */}
+              {equipType === 'chiller' && (
+                <>
+                  <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '16px', background: 'var(--color-bg-alt)' }}>
+                    <GraphViewer
+                      equipmentType={equipType}
+                      parameter="temp_in"
+                      timeRange={timeRange}
+                    />
+                  </div>
+                  <div style={{ border: '1px solid var(--color-border)', borderRadius: '8px', padding: '16px', background: 'var(--color-bg-alt)' }}>
+                    <GraphViewer
+                      equipmentType={equipType}
+                      parameter="temp_out"
+                      timeRange={timeRange}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Threshold Manager - Show for ALL equipment */}
+      {showThresholds && (
         <div className="monitoring-thresholds">
-          <h3>⚙️ Threshold Configuration for Selected Equipment</h3>
+          <h3>⚙️ Threshold Configuration - All Equipment</h3>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
             gap: '16px'
           }}>
-            {selectedEquipment.chiller && (
+            {['chiller', 'pump', 'ahu'].map(equipType => (
               <ThresholdManager
-                equipmentType="chiller"
-                parameter={parameter}
+                key={equipType}
+                equipmentType={equipType}
+                parameter="voltage_R"
               />
-            )}
-            {selectedEquipment.pump && (
-              <ThresholdManager
-                equipmentType="pump"
-                parameter={parameter}
-              />
-            )}
-            {selectedEquipment.ahu && (
-              <ThresholdManager
-                equipmentType="ahu"
-                parameter={parameter}
-              />
-            )}
+            ))}
           </div>
         </div>
       )}

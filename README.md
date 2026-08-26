@@ -1,110 +1,118 @@
-# JATSC Inspection System
+# JATSC Inspection System v2.0
 
-Professional equipment monitoring and inspection dashboard with React + Node.js + SQLite.
-
-**Now 100% Node.js - Super Simple Setup!** ✨
+**Professional Equipment Monitoring & Inspection Dashboard**  
+*React + Node.js + SQLite | 100% JavaScript Stack*
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (5 Minutes)
 
 ### Prerequisites
-- **Node.js 16+** → [Download](https://nodejs.org/)
+- **Node.js 16+** — [Download](https://nodejs.org/)
+- That's all you need! ✨
 
-That's it! No Python, no virtual environments!
-
-### Installation & Running
+### Installation
 
 ```bash
-# 1. Download ZIP from GitHub
-# https://github.com/novalwin-cmd/Pengecekan_Jatsc
+# 1. Extract project folder
+cd jatsc-inspection-system
 
-# 2. Extract and enter folder
-cd Pengecekan_Jatsc
-
-# 3. Install dependencies (one time)
+# 2. Install all dependencies
 npm install
 
-# 4. Start everything
+# 3. Start the system
 npm run dev
 ```
 
-Done! 🎉
-
-- **Frontend**: http://localhost:5173
-- **Backend**: http://127.0.0.1:5000
-
----
-
-## 📋 What Just Happened
-
-When you run `npm run dev`, it:
-- ✅ Starts React frontend on port 5173
-- ✅ Starts Node.js backend on port 5000
-- ✅ Both running simultaneously
-- ✅ Hot reload enabled for both
-- ✅ One command to rule them all!
+**Done!** The system is now running:
+- 🌐 **Frontend**: http://localhost:5173
+- ⚙️ **Backend API**: http://localhost:5000
 
 ---
 
-## 🎯 Features
+## ⚡ What Happens When You Run `npm run dev`
 
-### ✓ Daily Check Workflow
-- Record equipment readings (Chiller, Pump, AHU)
-- Add team members
-- Real-time anomaly detection
-- Export to CSV, XLSX, PDF
+✅ Starts React frontend (port 5173)  
+✅ Starts Node.js backend (port 5000)  
+✅ Both run simultaneously  
+✅ Hot reload enabled (auto-refresh on code changes)  
+✅ One command, complete system
 
-### 📚 History & Analysis
-- View all past checks
-- Inline graph visualization
-- Multi-equipment comparison
-- Export historical data
+---
 
-### 📊 Data Monitoring
-- Historical trend analysis
-- Configurable thresholds
-- Time range filtering
-- Color-coded equipment display
+## 📋 Features
+
+### 📝 Daily Check Workflow
+- **Record equipment readings** for 4 logsheet categories:
+  - **Beban Listrik** (Power Load)
+  - **STS** (Static Transfer Switch)
+  - **UPS** (200 KVA & 20 KVA)
+  - **MDS** (Main Distribution Switchboard)
+- **3 Inspection Concepts**: Inspection, Preventive, Corrective
+- **Add team members** per inspection session
+- **Real-time validation** with threshold alerts
+- **Export reports** to Excel, PDF, CSV
+
+### 📊 History & Analytics
+- View all past inspection sessions
+- **Equipment trend graphs** with Recharts
+- **Multi-equipment comparison**
+- Filter by date, shift, equipment, status
+- Search & sort capabilities
+
+### 📈 Data Monitoring
+- Historical data analysis
+- Equipment performance trends
+- Configurable alert thresholds
+- Status tracking (NORMAL, U/S, GANGGUAN, PERBAIKAN)
+- Real-time incident logging
 
 ---
 
 ## 📁 Project Structure
 
 ```
-Pengecekan_Jatsc/
-├── frontend/                 # React application
+jatsc-inspection-system/
+│
+├── frontend/                      # React Application
 │   ├── src/
-│   │   ├── components/      # Daily Check, History, Monitoring
-│   │   ├── hooks/           # API utilities
-│   │   ├── utils/           # Export & debug tools
-│   │   └── styles/          # Design tokens
+│   │   ├── components/           # Daily Check, History, Monitoring UI
+│   │   ├── hooks/                # API call utilities
+│   │   ├── utils/                # Export & helper functions
+│   │   ├── styles/               # CSS & design tokens
+│   │   └── App.jsx               # Main app component
+│   ├── vite.config.js            # Frontend config
 │   └── package.json
-├── backend/                  # Node.js + Express
+│
+├── backend/                       # Node.js + Express Server
 │   ├── src/
-│   │   ├── index.js        # Server entry
-│   │   ├── models.js       # Database models
-│   │   └── routes.js       # API endpoints
+│   │   ├── index.js              # Server entry & initialization
+│   │   ├── models.js             # Sequelize database models
+│   │   ├── routes.js             # API route handlers
+│   │   └── middleware/           # CORS, validation, auth
+│   ├── jatsc_inspections.db      # SQLite database (auto-created)
 │   └── package.json
-├── package.json            # Root commands
-└── README.md               # This file
+│
+├── package.json                  # Root npm commands
+├── SPESIFIKASI_DATA_PENGECEKAN_JATSC.md  # Data specification
+└── README.md                     # This file
 ```
 
 ---
 
-## 🔧 Available Commands
+## 🛠 NPM Commands
 
 ```bash
-# Start both frontend and backend
+# Development: Start both frontend & backend
 npm run dev
 
-# Start only backend
+# Backend only (port 5000)
 npm run dev:backend
 
-# Start only frontend
+# Frontend only (port 5173)
 npm run dev:frontend
 
-# Install all dependencies
+# Install dependencies for all projects
 npm install-all
 
 # Build frontend for production
@@ -115,53 +123,77 @@ npm run build
 
 ## 💾 Database
 
-SQLite database is automatically created at:
+SQLite database is **automatically created** at:
 ```
 backend/jatsc_inspections.db
 ```
 
-Tables:
-- `DailyChecks` - Daily inspection sessions
-- `DailyCheckPersonnels` - Team members per check
-- `DailyCheckReadings` - Equipment readings
-- `Thresholds` - Min/max alert values
+### Database Tables
+
+| Table | Purpose |
+| :--- | :--- |
+| `daily_check_sessions` | Inspection session metadata (date, shift, category) |
+| `equipment_readings` | Individual equipment readings & parameters |
+| `Thresholds` | Min/max alert values per parameter |
+| `DailyCheckPersonnels` | Team members assigned per session |
 
 ---
 
-## 🌐 API Endpoints
+## 🔌 API Endpoints
 
-All endpoints are localhost:5000 - perfect for AirNav private network!
+**Base URL**: `http://localhost:5000/api`
 
-### Daily Checks
-- `GET /api/daily-checks` - List all checks
-- `GET /api/daily-check/:id` - Get check details
-- `POST /api/daily-check/start` - Start new check
-- `POST /api/daily-check/:id/stop` - Complete check
+### Daily Check Sessions
+| Method | Endpoint | Purpose |
+| :--- | :--- | :--- |
+| `GET` | `/daily-checks` | List all sessions |
+| `GET` | `/daily-check/:id` | Get session details |
+| `POST` | `/daily-check/start` | Start new inspection |
+| `POST` | `/daily-check/:id/stop` | Complete inspection |
+
+### Equipment Readings
+| Method | Endpoint | Purpose |
+| :--- | :--- | :--- |
+| `POST` | `/daily-check/:id/reading` | Record equipment reading |
+| `GET` | `/daily-check/:id/readings` | Get all readings in session |
+| `DELETE` | `/reading/:id` | Remove reading |
 
 ### Personnel
-- `POST /api/daily-check/:id/personnel` - Add team member
-- `DELETE /api/personnel/:id` - Remove team member
+| Method | Endpoint | Purpose |
+| :--- | :--- | :--- |
+| `POST` | `/daily-check/:id/personnel` | Add team member |
+| `DELETE` | `/personnel/:id` | Remove team member |
 
-### Readings
-- `POST /api/daily-check/:id/reading` - Record reading
-- `DELETE /api/reading/:id` - Remove reading
-
-### Thresholds
-- `GET /api/thresholds` - List thresholds
-- `POST /api/thresholds` - Create threshold
-- `PUT /api/thresholds/:id` - Update threshold
-
-### Monitoring
-- `GET /api/data-monitoring/readings` - Historical data
+### Monitoring & History
+| Method | Endpoint | Purpose |
+| :--- | :--- | :--- |
+| `GET` | `/data-monitoring/readings` | Get historical data |
+| `GET` | `/thresholds` | List alert thresholds |
+| `POST` | `/thresholds` | Create threshold |
+| `PUT` | `/thresholds/:id` | Update threshold |
 
 ---
 
-## 📊 Equipment Types
+## 🖥 Equipment Categories
 
-Supported equipment:
-- **Chiller (180 TR)** - Voltage (R,S,T) + Temperature (In/Out)
-- **Pump** - Voltage (R,S,T)
-- **AHU** - Voltage (R,S,T)
+### Beban Listrik (Power Load)
+- P713, T705A, CHILLER 1-3
+- MDS T7/P7 LCA/LCB
+- TRAFO T-7A/B, P-7A/B
+
+### STS (Static Transfer Switch)
+- ESS, AMSC, MER
+- PROCESSING ROOM, OPS ROOM 1-2
+- BILLING SYSTEM, TER
+
+### UPS (200 KVA & 20 KVA)
+- UPS 1-2 (200 KVA)
+- PDB 200 KVA (1-2)
+- UPS 20 KVA, PDB 20 KVA
+
+### MDS (Main Distribution Switchboard)
+- MDS, MDS T7 LCA/LCB
+- MDS P7 LCA/LCB
 
 ---
 
@@ -183,29 +215,30 @@ server: {
 
 ---
 
-## 🛠️ Troubleshooting
+## 🔧 Troubleshooting
 
-### Port Already in Use
+### ❌ Port Already in Use
 
-**Kill existing processes:**
+**Linux/macOS:**
 ```bash
-# macOS/Linux
 lsof -i :5000 | grep LISTEN | awk '{print $2}' | xargs kill -9
 lsof -i :5173 | grep LISTEN | awk '{print $2}' | xargs kill -9
+```
 
-# Windows
+**Windows:**
+```bash
 taskkill /F /IM node.exe
 ```
 
-### Dependencies Installation Fails
+### ❌ Dependencies Won't Install
 
 ```bash
-# Clear cache and reinstall
 npm cache clean --force
+rm -rf node_modules package-lock.json
 npm install-all
 ```
 
-### Backend Won't Start
+### ❌ Backend Won't Start
 
 ```bash
 cd backend
@@ -213,69 +246,95 @@ npm install
 npm run dev
 ```
 
+### ❌ Frontend Won't Load
+
+- Check console (F12) for errors
+- Ensure backend is running (http://localhost:5000)
+- Clear browser cache (Ctrl+Shift+Delete)
+
 ---
 
 ## 📱 Browser Support
 
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
+| Browser | Min Version |
+| :--- | :--- |
+| Chrome | 90+ |
+| Firefox | 88+ |
+| Safari | 14+ |
+| Edge | 90+ |
 
 ---
 
-## 🔐 Security Notes
+## 🔐 Security & Network
 
-- Localhost only (perfect for private network)
-- CORS enabled for localhost
-- No authentication layer (internal use)
-- SQLite suitable for single server
+- ✅ **Localhost only** - Perfect for private AirNav network
+- ✅ **CORS enabled** for localhost
+- ✅ **SQLite** - Single server, no network database needed
+- ⚠️ **No authentication layer** - Internal use only
+- ⚠️ **HTTP only** - Use in trusted network environments
 
 ---
 
-## 📚 Technology Stack
+## 🛠 Technology Stack
 
 ### Frontend
-- React 19
-- Vite 8.2.2
-- Recharts (graphs)
-- html2canvas (export)
-- jsPDF (PDF generation)
+- **React 19** - UI framework
+- **Vite 8.2.2** - Build tool & dev server
+- **Recharts** - Data visualization
+- **html2canvas** - Screenshot export
+- **jsPDF** - PDF generation
 
 ### Backend
-- Node.js 16+
-- Express 4.18
-- Sequelize ORM
-- SQLite3
+- **Node.js 16+** - Runtime
+- **Express 4.18** - Web framework
+- **Sequelize** - ORM
+- **SQLite3** - Database
 
 ---
 
-## 🚀 Deployment on AirNav Network
+## 🚀 Deploy on AirNav Network
 
-1. Clone repository on AirNav server
+1. Clone/extract on AirNav server
 2. Run `npm install`
-3. Run `npm run dev`
-4. Access from any device on AirNav network:
+3. Start with `npm run dev`
+4. Access from network:
    ```
    http://<server-ip>:5173
    ```
 
 ---
 
-## 📞 Support
+## 📖 Documentation
 
-Check browser console (F12) for errors. Backend logs show in terminal.
+- **Data Specification**: See `SPESIFIKASI_DATA_PENGECEKAN_JATSC.md`
+  - 4 logsheet categories
+  - 3 inspection concepts
+  - Database schema
+  - Validation rules
+
+---
+
+## 📞 Support & Debugging
+
+- **Frontend Errors**: Open DevTools (F12) → Console
+- **Backend Errors**: Check terminal output
+- **Database Issues**: Check `backend/jatsc_inspections.db`
+- **Port Conflicts**: Use commands above to kill processes
 
 ---
 
 ## 📄 License
 
-Proprietary - JATSC
+**Proprietary** - JATSC  
+All rights reserved.
 
 ---
 
-## 👨‍💻 Version
+## 👨‍💻 Version & Credits
 
-v2.0.0 - Node.js Edition (100% JavaScript stack)
+**Version**: 2.0.0 (Node.js Edition)  
+**Stack**: 100% JavaScript (React + Node.js + SQLite)  
+**Built for**: JATSC Equipment Inspection  
+**Author**: Clive (novalwin@gmail.com)
 
-Built with ❤️ for JATSC
+Built with ❤️ for JATSC | Last Updated: 26 August 2026

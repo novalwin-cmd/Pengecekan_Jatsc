@@ -1,0 +1,122 @@
+.category-selector-container {
+  margin-bottom: 2rem;
+  background: linear-gradient(135deg, #2D8B94 0%, #1B4A5C 100%);
+  padding: 2rem;
+  border-radius: 0.75rem;
+  border: 2px solid var(--peacock);
+}
+
+.category-selector-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #FFFFFF;
+}
+
+.category-selector-header h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 0.5rem;
+}
+
+.category-selector-header p {
+  color: #B8D4DC;
+  font-size: 0.95rem;
+}
+
+.category-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.category-button {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 3px solid var(--peacock);
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #2D8B94 0%, #1B4A5C 100%);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  text-align: left;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.category-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 118, 110, 0.15);
+  border-color: var(--aegean);
+  background: linear-gradient(135deg, #2D8B94 0%, #1B4A5C 100%);
+}
+
+.category-button.active {
+  box-shadow: 0 8px 25px rgba(15, 118, 110, 0.25);
+  border-width: 3px;
+  background: linear-gradient(135deg, #2D8B94 0%, #1B4A5C 100%);
+  border-color: var(--peacock);
+}
+
+.category-button-icon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.category-button-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.category-button-content h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.3;
+}
+
+.category-button-content p {
+  font-size: 0.875rem;
+  color: #B8D4DC;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.category-button-check {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: white;
+  background: #059669;
+  border-radius: 50%;
+}
+
+@media (max-width: 768px) {
+  .category-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .category-button {
+    padding: 1rem;
+  }
+
+  .category-button-icon {
+    font-size: 2rem;
+  }
+
+  .category-button-content h3 {
+    font-size: 1rem;
+  }
+}

@@ -1,41 +1,58 @@
 /**
- * DailyCheckActive Component
- * Main active check session - add personnel and readings
+ * DailyCheckActive Component (Updated)
+ * Main active check session - category-based inspection with personnel management
+ * Supports all 4 logsheets in one session with organized category selection
  */
 
 import { useState, useEffect } from 'react';
 import { useApiPost, useApiGet } from '../../hooks/useApi';
-import { EQUIPMENT_LABELS, EQUIPMENT_FIELDS, DEFAULT_READING, ROLES } from '../../config/constants';
-import EquipmentTable from '../InspectionForm/EquipmentTable';
+import { ROLES, LOGSHEET_CATEGORIES } from '../../config/constants';
+import CategorySelector from './CategorySelector';
+import LogsheetInspectionForm from './LogsheetInspectionForm';
 import Toast from '../Toast';
 import './DailyCheck.css';
 
 const DailyCheckActive = ({ checkId, onCheckStopped }) => {
+  // Session data
   const [check, setCheck] = useState(null);
+
+  // Category selection
+  const [selectedCategory, setSelectedCategory] = useState(LOGSHEET_CATEGORIES.BEBAN_LISTRIK);
+
+  // Personnel management
   const [newPersonnelName, setNewPersonnelName] = useState('');
   const [newPersonnelRole, setNewPersonnelRole] = useState('Operator');
+
+  // Session notes
   const [notes, setNotes] = useState('');
+
+  // UI state
   const [toast, setToast] = useState(null);
+  const [expandedSections, setExpandedSections] = useState({
+    personnel: true,
+    categories: true,
+    form: true,
+  });
 
-  const [chillerReadings, setChillerReadings] = useState([{ ...DEFAULT_READING.chiller }]);
-  const [pumpReadings, setPumpReadings] = useState([]);
-  const [ahuReadings, setAhuReadings] = useState([]);
-
+  // API hooks
   const { loading: loadingCheck, post: postPersonnel } = useApiPost();
   const { loading: loadingStop, post: stopCheck } = useApiPost();
   const { loading: loadingRead, post: addReading } = useApiPost();
   const { data: checkData, fetch: fetchCheck } = useApiGet(`/daily-check/${checkId}`);
 
+  // Fetch check data on mount
   useEffect(() => {
     fetchCheck();
   }, [checkId]);
 
+  // Update check state when data changes
   useEffect(() => {
     if (checkData?.data) {
       setCheck(checkData.data);
     }
   }, [checkData]);
 
+  // Handle add personnel
   const handleAddPersonnel = async () => {
     if (!newPersonnelName.trim()) {
       setToast({ type: 'error', message: 'Please enter personnel name' });
@@ -52,61 +69,50 @@ const DailyCheckActive = ({ checkId, onCheckStopped }) => {
       setNewPersonnelRole('Operator');
       setToast({ type: 'success', message: '✅ Personnel added!' });
 
-      // Refresh check data
       setTimeout(() => fetchCheck(), 500);
     } catch (err) {
-      setToast({ type: 'error', message: `❌ Failed to add personnel` });
+      setToast({ type: 'error', message: '❌ Failed to add personnel' });
     }
   };
 
-  const handleSaveReadings = async () => {
+  // Handle save readings (from LogsheetInspectionForm)
+  const handleReadingsSaved = async (readings, category, conceptType) => {
     try {
-      // Save all chiller readings
-      for (const reading of chillerReadings) {
-        if (reading.location && reading.peralatan) {
+      let savedCount = 0;
+
+      // Save each reading to backend
+      for (const reading of readings) {
+        try {
           await addReading(`/daily-check/${checkId}/reading`, {
-            equipment_type: 'chiller',
+            equipment_type: category,
+            concept_type: check.concept_type,
+            category: category,
             ...reading,
           });
+          savedCount++;
+        } catch (err) {
+          console.error('Error saving reading:', err);
         }
       }
 
-      // Save all pump readings
-      for (const reading of pumpReadings) {
-        if (reading.location && reading.peralatan) {
-          await addReading(`/daily-check/${checkId}/reading`, {
-            equipment_type: 'pump',
-            ...reading,
-          });
-        }
-      }
+      setToast({
+        type: 'success',
+        message: `✅ ${savedCount}/${readings.length} readings saved!`,
+      });
 
-      // Save all AHU readings
-      for (const reading of ahuReadings) {
-        if (reading.location && reading.peralatan) {
-          await addReading(`/daily-check/${checkId}/reading`, {
-            equipment_type: 'ahu',
-            ...reading,
-          });
-        }
-      }
-
-      setToast({ type: 'success', message: '✅ All readings saved!' });
       setTimeout(() => fetchCheck(), 500);
     } catch (err) {
       setToast({ type: 'error', message: '❌ Failed to save readings' });
     }
   };
 
+  // Handle stop check
   const handleStopCheck = async () => {
     if (!window.confirm('Stop this daily check? Make sure all data is entered.')) {
       return;
     }
 
     try {
-      // Save readings first
-      await handleSaveReadings();
-
       const stopTime = new Date().toTimeString().split(' ')[0];
       await stopCheck(`/daily-check/${checkId}/stop`, {
         stop_time: stopTime,
@@ -122,10 +128,19 @@ const DailyCheckActive = ({ checkId, onCheckStopped }) => {
         onCheckStopped(checkId);
       }, 1000);
     } catch (err) {
-      setToast({ type: 'error', message: `❌ Failed to stop check` });
+      setToast({ type: 'error', message: '❌ Failed to stop check' });
     }
   };
 
+  // Toggle section expansion
+  const toggleSection = (section) => {
+    setExpandedSections({
+      ...expandedSections,
+      [section]: !expandedSections[section],
+    });
+  };
+
+  // Loading state
   if (!check) {
     return (
       <div className="daily-check-loading">
@@ -137,109 +152,117 @@ const DailyCheckActive = ({ checkId, onCheckStopped }) => {
 
   return (
     <div className="daily-check-active-container">
+      {/* Header */}
       <div className="daily-check-header">
         <div>
           <h2>Daily Check #{check.id} - Active</h2>
-          <p>Date: {new Date(check.date).toLocaleDateString('id-ID')} • Shift: {check.shift}</p>
+          <p>
+            Date: {new Date(check.date).toLocaleDateString('id-ID')} • Shift: {check.shift}
+            • Konsep: {check.concept_type}
+          </p>
         </div>
       </div>
 
       {/* Personnel Section */}
       <div className="daily-check-section">
-        <h3>👥 Personnel Participating</h3>
+        <div
+          className="section-header"
+          onClick={() => toggleSection('personnel')}
+          role="button"
+          tabIndex="0"
+        >
+          <h3>👥 Personnel Participating</h3>
+          <span className="toggle-icon">
+            {expandedSections.personnel ? '▼' : '▶'}
+          </span>
+        </div>
 
-        {check.personnel.length > 0 && (
-          <div className="personnel-list">
-            {check.personnel.map((p) => (
-              <div key={p.id} className="personnel-badge">
-                <span className="personnel-name">{p.name}</span>
-                <span className="personnel-role">{p.role}</span>
+        {expandedSections.personnel && (
+          <div className="section-content">
+            {check.personnel?.length > 0 && (
+              <div className="personnel-list">
+                {check.personnel.map((p) => (
+                  <div key={p.id} className="personnel-badge">
+                    <span className="personnel-name">{p.name}</span>
+                    <span className="personnel-role">{p.role}</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
+
+            <div className="personnel-input-group">
+              <input
+                type="text"
+                placeholder="Personnel name"
+                value={newPersonnelName}
+                onChange={(e) => setNewPersonnelName(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddPersonnel()}
+              />
+              <select
+                value={newPersonnelRole}
+                onChange={(e) => setNewPersonnelRole(e.target.value)}
+              >
+                {ROLES.map(role => (
+                  <option key={role} value={role}>{role}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="btn btn-success btn-small"
+                onClick={handleAddPersonnel}
+                disabled={loadingCheck}
+              >
+                + Add
+              </button>
+            </div>
           </div>
         )}
-
-        <div className="personnel-input-group">
-          <input
-            type="text"
-            placeholder="Personnel name"
-            value={newPersonnelName}
-            onChange={(e) => setNewPersonnelName(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAddPersonnel()}
-          />
-          <select
-            value={newPersonnelRole}
-            onChange={(e) => setNewPersonnelRole(e.target.value)}
-          >
-            {ROLES.map(role => (
-              <option key={role} value={role}>{role}</option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="btn btn-success btn-small"
-            onClick={handleAddPersonnel}
-            disabled={loadingCheck}
-          >
-            + Add
-          </button>
-        </div>
       </div>
 
-      {/* Equipment Readings Section */}
-      <div className="daily-check-section">
-        <h3>📊 Equipment Readings</h3>
+      {/* Category Selection */}
+      <CategorySelector
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
+      />
 
-        <EquipmentTable
-          title={EQUIPMENT_LABELS.chiller}
-          rows={chillerReadings}
-          onRowsChange={setChillerReadings}
-          fields={EQUIPMENT_FIELDS.chiller}
-        />
-
-        <EquipmentTable
-          title={EQUIPMENT_LABELS.pump}
-          rows={pumpReadings}
-          onRowsChange={setPumpReadings}
-          fields={EQUIPMENT_FIELDS.pump}
-        />
-
-        <EquipmentTable
-          title={EQUIPMENT_LABELS.ahu}
-          rows={ahuReadings}
-          onRowsChange={setAhuReadings}
-          fields={EQUIPMENT_FIELDS.ahu}
-        />
-      </div>
+      {/* Logsheet Inspection Form */}
+      <LogsheetInspectionForm
+        category={selectedCategory}
+        checkId={checkId}
+        conceptType={check.concept_type}
+        onReadingsSaved={handleReadingsSaved}
+        loading={loadingRead}
+      />
 
       {/* Notes Section */}
       <div className="daily-check-section">
-        <h3>📝 Notes</h3>
-        <textarea
-          placeholder="Additional notes for this daily check..."
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          className="notes-textarea"
-        />
+        <div
+          className="section-header"
+          onClick={() => toggleSection('notes')}
+          role="button"
+          tabIndex="0"
+        >
+          <h3>📝 Session Notes</h3>
+          <span className="toggle-icon">
+            {expandedSections.notes ? '▼' : '▶'}
+          </span>
+        </div>
+
+        {expandedSections.notes && (
+          <div className="section-content">
+            <textarea
+              placeholder="Additional notes for this daily check..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="notes-textarea"
+              rows="4"
+            />
+          </div>
+        )}
       </div>
 
       {/* Actions */}
       <div className="daily-check-actions">
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={handleSaveReadings}
-          disabled={loadingRead}
-        >
-          {loadingRead ? (
-            <>
-              <span className="spinner"></span>
-              Saving...
-            </>
-          ) : (
-            <>💾 Save Readings</>
-          )}
-        </button>
         <button
           type="button"
           className="btn btn-danger"
@@ -257,6 +280,7 @@ const DailyCheckActive = ({ checkId, onCheckStopped }) => {
         </button>
       </div>
 
+      {/* Toast Notification */}
       {toast && (
         <Toast
           message={toast.message}

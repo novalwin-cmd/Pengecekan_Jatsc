@@ -76,11 +76,26 @@ const GraphViewer = ({ equipmentType, parameter, timeRange }) => {
 
   const getValueForParameter = (reading, param) => {
     const paramMap = {
-      'voltage_R': reading.R,
-      'voltage_S': reading.S,
-      'voltage_T': reading.T,
-      'temp_in': reading.in_temp,
-      'temp_out': reading.out_temp,
+      // English names (legacy)
+      'voltage_R': reading.R || reading.tegangan_r,
+      'voltage_S': reading.S || reading.tegangan_s,
+      'voltage_T': reading.T || reading.tegangan_t,
+      'temp_in': reading.in_temp || reading.suhu_masuk,
+      'temp_out': reading.out_temp || reading.suhu_keluar,
+      // Indonesian names (new)
+      'tegangan_r': reading.tegangan_r,
+      'tegangan_s': reading.tegangan_s,
+      'tegangan_t': reading.tegangan_t,
+      'arus_r': reading.arus_r,
+      'arus_s': reading.arus_s,
+      'arus_t': reading.arus_t,
+      'cos_phi': reading.cos_phi,
+      'kwh': reading.kwh,
+      'suhu': reading.suhu,
+      'frekuensi': reading.frekuensi,
+      'temp_power': reading.temp_power,
+      'temp_room': reading.temp_room,
+      'temp_battery': reading.temp_battery,
     };
     return paramMap[param] || 0;
   };
