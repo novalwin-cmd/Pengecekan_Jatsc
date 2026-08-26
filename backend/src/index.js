@@ -55,8 +55,7 @@ async function startServer() {
       console.log('╚════════════════════════════════════════╝');
       console.log('');
       console.log(`📍 Local:   http://127.0.0.1:${PORT}`);
-      console.log(`📍 Network: http://192.168.110.221:${PORT}`);
-      console.log(`📍 AirNav:  http://192.168.110.221:${PORT}`);
+      console.log(`📍 AirNav:  http://172.21.9.76:${PORT}`);
       console.log('');
     });
   } catch (error) {

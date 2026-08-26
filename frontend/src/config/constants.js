@@ -3,9 +3,8 @@
  * Comprehensive configuration for all 4 logsheets with complete parameter definitions
  */
 
-// Network IP for AirNav local network access (192.168.110.221:3001)
-// Change this if your laptop IP changes
-export const API_BASE_URL = 'http://192.168.110.221:3001/api';
+// AirNav Network IP for private network access (172.21.9.76:3001)
+export const API_BASE_URL = 'http://172.21.9.76:3001/api';
 
 // ============================================================================
 // LEGACY CONSTANTS (Keep for backward compatibility)
