@@ -431,7 +431,10 @@ export function setupRoutes(app) {
         where,
         raw: true,
         order: [['createdAt', 'DESC']],
-        limit: 1000
+        limit: 1000,
+        attributes: {
+          exclude: ['suhu_masuk', 'suhu_keluar'] // These columns don't exist, exclude them
+        }
       });
 
       res.json({ data: readings, success: true });
