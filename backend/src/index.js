@@ -47,14 +47,16 @@ async function startServer() {
     // Initialize database
     await initializeDatabase();
 
-    // Start server
-    app.listen(PORT, () => {
+    // Start server on all network interfaces (0.0.0.0) for AirNav network access
+    app.listen(PORT, '0.0.0.0', () => {
       console.log('');
       console.log('╔════════════════════════════════════════╗');
       console.log('║   🚀 JATSC Backend Server Started      ║');
       console.log('╚════════════════════════════════════════╝');
       console.log('');
-      console.log(`📍 API running on http://127.0.0.1:${PORT}`);
+      console.log(`📍 Local:   http://127.0.0.1:${PORT}`);
+      console.log(`📍 Network: http://192.168.110.221:${PORT}`);
+      console.log(`📍 AirNav:  http://192.168.110.221:${PORT}`);
       console.log('');
     });
   } catch (error) {
