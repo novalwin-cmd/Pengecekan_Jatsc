@@ -46,4 +46,9 @@ npm-debug.log*
 
 # Cache
 .cache/
+
+# Credentials & Secrets (DO NOT COMMIT!)
+*-credentials.json
+*-credential.json
+*.credentials.json
 backend/jatsc-inspection-credentials.json
