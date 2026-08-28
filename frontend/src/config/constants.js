@@ -3,8 +3,8 @@
  * Comprehensive configuration for all 4 logsheets with complete parameter definitions
  */
 
-// AirNav Network IP for private network access (172.21.9.76:3001)
-export const API_BASE_URL = 'http://172.21.9.76:3001/api';
+// Local development - connect to backend on port 3002
+export const API_BASE_URL = 'http://localhost:3002/api';
 
 // ============================================================================
 // LEGACY CONSTANTS (Keep for backward compatibility)

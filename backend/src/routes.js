@@ -79,8 +79,21 @@ export function setupRoutes(app) {
           start_time: check.start_time,
           stop_time: check.stop_time,
           status: check.status,
-          concept_type: check.concept_type, // NEW
+          concept_type: check.concept_type,
           notes: check.notes,
+          is_approved: check.is_approved,
+          approved_at: check.approved_at,
+          approved_by: check.approved_by,
+          // Supervisor approval
+          supervisor_approved: check.supervisor_approved,
+          supervisor_name: check.supervisor_name,
+          supervisor_signature: check.supervisor_signature,
+          supervisor_approved_at: check.supervisor_approved_at,
+          // Technical Manager approval
+          technical_manager_approved: check.technical_manager_approved,
+          technical_manager_name: check.technical_manager_name,
+          technical_manager_signature: check.technical_manager_signature,
+          technical_manager_approved_at: check.technical_manager_approved_at,
           personnel: check.personnel,
           readings: check.readings,
           created_at: check.createdAt,
@@ -134,6 +147,137 @@ export function setupRoutes(app) {
       res.json({ success: true });
     } catch (error) {
       console.error('Error stopping daily check:', error);
+      res.status(500).json({ error: error.message, success: false });
+    }
+  });
+
+  // Approve daily check - Optimized for speed (legacy endpoint)
+  app.post('/api/daily-check/:id/approve', async (req, res) => {
+    try {
+      const checkId = req.params.id;
+      const { is_approved } = req.body;
+
+      // Quick update without full fetch - better performance
+      const updateData = {
+        is_approved: is_approved || false,
+        approved_at: is_approved ? new Date() : null,
+        approved_by: is_approved ? 'System' : null
+      };
+
+      await DailyCheck.update(updateData, {
+        where: { id: checkId },
+        silent: true
+      });
+
+      // Return immediately with optimized response
+      res.json({
+        data: {
+          id: checkId,
+          is_approved: updateData.is_approved,
+          approved_at: updateData.approved_at,
+          approved_by: updateData.approved_by
+        },
+        success: true
+      });
+    } catch (error) {
+      console.error('Error approving daily check:', error);
+      res.status(500).json({ error: error.message, success: false });
+    }
+  });
+
+  // ========================================================================
+  // SUPERVISOR & TECHNICAL MANAGER APPROVAL
+  // ========================================================================
+
+  // Supervisor Approval
+  app.post('/api/daily-check/:id/approve-supervisor', async (req, res) => {
+    try {
+      const checkId = req.params.id;
+      const { supervisor_approved, supervisor_name, supervisor_signature } = req.body;
+
+      if (supervisor_approved && (!supervisor_name || !supervisor_signature)) {
+        return res.status(400).json({
+          error: 'Supervisor name and signature are required',
+          success: false
+        });
+      }
+
+      const updateData = {
+        supervisor_approved: supervisor_approved || false,
+        supervisor_name: supervisor_approved ? supervisor_name : null,
+        supervisor_signature: supervisor_approved ? supervisor_signature : null,
+        supervisor_approved_at: supervisor_approved ? new Date() : null
+      };
+
+      await DailyCheck.update(updateData, {
+        where: { id: checkId },
+        silent: true
+      });
+
+      res.json({
+        data: {
+          id: checkId,
+          supervisor_approved: updateData.supervisor_approved,
+          supervisor_name: updateData.supervisor_name,
+          supervisor_approved_at: updateData.supervisor_approved_at
+        },
+        success: true
+      });
+    } catch (error) {
+      console.error('Error in supervisor approval:', error);
+      res.status(500).json({ error: error.message, success: false });
+    }
+  });
+
+  // Technical Manager Approval
+  app.post('/api/daily-check/:id/approve-technical-manager', async (req, res) => {
+    try {
+      const checkId = req.params.id;
+      const { technical_manager_approved, technical_manager_name, technical_manager_signature } = req.body;
+
+      // Check if supervisor has approved first
+      const check = await DailyCheck.findByPk(checkId);
+      if (!check) {
+        return res.status(404).json({ error: 'Check not found', success: false });
+      }
+
+      if (technical_manager_approved && !check.supervisor_approved) {
+        return res.status(400).json({
+          error: 'Supervisor must approve before Technical Manager can approve',
+          success: false
+        });
+      }
+
+      if (technical_manager_approved && (!technical_manager_name || !technical_manager_signature)) {
+        return res.status(400).json({
+          error: 'Technical Manager name and signature are required',
+          success: false
+        });
+      }
+
+      const updateData = {
+        technical_manager_approved: technical_manager_approved || false,
+        technical_manager_name: technical_manager_approved ? technical_manager_name : null,
+        technical_manager_signature: technical_manager_approved ? technical_manager_signature : null,
+        technical_manager_approved_at: technical_manager_approved ? new Date() : null
+      };
+
+      await DailyCheck.update(updateData, {
+        where: { id: checkId },
+        silent: true
+      });
+
+      res.json({
+        data: {
+          id: checkId,
+          technical_manager_approved: updateData.technical_manager_approved,
+          technical_manager_name: updateData.technical_manager_name,
+          technical_manager_approved_at: updateData.technical_manager_approved_at
+        },
+        success: true
+      });
+    } catch (error) {
+      console.error('Error in technical manager approval:', error);
       res.status(500).json({ error: error.message, success: false });
     }
   });

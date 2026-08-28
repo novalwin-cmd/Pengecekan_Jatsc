@@ -25,21 +25,20 @@ const DailyCheckStart = ({ onCheckStarted }) => {
         date,
         shift,
         start_time: startTime,
-        concept_type: conceptType, // NEW: Pass concept type
+        concept_type: conceptType,
       });
 
       setToast({
         type: 'success',
-        message: `✅ Daily Check #${response.data.id} started (${conceptType})!`,
+        message: `✅ Daily Check #${response.data.id} started!`,
       });
 
-      setTimeout(() => {
-        onCheckStarted(response.data.id);
-      }, 1000);
+      // Start immediately - no delay!
+      onCheckStarted(response.data.id);
     } catch (err) {
       setToast({
         type: 'error',
-        message: `❌ Failed to start daily check: ${err.message}`,
+        message: `❌ Failed to start: ${err.message}`,
       });
     }
   };

@@ -69,7 +69,8 @@ const DailyCheckActive = ({ checkId, onCheckStopped }) => {
       setNewPersonnelRole('Operator');
       setToast({ type: 'success', message: '✅ Personnel added!' });
 
-      setTimeout(() => fetchCheck(), 500);
+      // Fetch immediately - no delay!
+      fetchCheck();
     } catch (err) {
       setToast({ type: 'error', message: '❌ Failed to add personnel' });
     }
@@ -100,7 +101,8 @@ const DailyCheckActive = ({ checkId, onCheckStopped }) => {
         message: `✅ ${savedCount}/${readings.length} readings saved!`,
       });
 
-      setTimeout(() => fetchCheck(), 500);
+      // Fetch immediately - no delay!
+      fetchCheck();
     } catch (err) {
       setToast({ type: 'error', message: '❌ Failed to save readings' });
     }
@@ -124,9 +126,8 @@ const DailyCheckActive = ({ checkId, onCheckStopped }) => {
         message: '✅ Daily check completed!',
       });
 
-      setTimeout(() => {
-        onCheckStopped(checkId);
-      }, 1000);
+      // Complete immediately - no delay!
+      onCheckStopped(checkId);
     } catch (err) {
       setToast({ type: 'error', message: '❌ Failed to stop check' });
     }

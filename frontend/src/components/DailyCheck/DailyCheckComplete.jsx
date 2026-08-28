@@ -3,11 +3,12 @@
  * Completion summary with export options
  */
 
-import { useState, useEffect } from 'react';
-import { useApiGet } from '../../hooks/useApi';
+import { useState, useEffect, useRef } from 'react';
+import { useApiGet, useApiPost } from '../../hooks/useApi';
 import { useExport } from '../../hooks/useExport';
 import Toast from '../Toast';
 import MonitoringGraphs from './MonitoringGraphs';
+import ApprovalChecklist from './ApprovalChecklist';
 import './DailyCheck.css';
 import './MonitoringGraphs.css';
 
@@ -15,7 +16,12 @@ const DailyCheckComplete = ({ checkId, onNewCheck, onEdit }) => {
   const [check, setCheck] = useState(null);
   const [toast, setToast] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
+  const [approvingId, setApprovingId] = useState(null);
+  const [approvalTimestamp, setApprovalTimestamp] = useState(null);
+  const abortControllerRef = useRef(null);
   const { data: checkData, fetch: fetchCheck } = useApiGet(`/daily-check/${checkId}`);
+  const { post: postApprove } = useApiPost();
   const { exportCSV, exportXLSX, exportPDF } = useExport();
 
   useEffect(() => {
@@ -25,12 +31,26 @@ const DailyCheckComplete = ({ checkId, onNewCheck, onEdit }) => {
   useEffect(() => {
     if (checkData?.data) {
       setCheck(checkData.data);
+      setIsApproved(checkData.data.is_approved || false);
+      // Store approval timestamp if approved
+      if (checkData.data.is_approved && checkData.data.approved_at) {
+        setApprovalTimestamp(new Date(checkData.data.approved_at));
+      }
     }
   }, [checkData]);
 
   const handleExport = async (format) => {
     if (!check) {
       setToast({ type: 'error', message: '❌ Check data not loaded' });
+      return;
+    }
+
+    // PDF export requires both approvals
+    if (format === 'pdf' && (!check.supervisor_approved || !check.technical_manager_approved)) {
+      setToast({
+        type: 'error',
+        message: '❌ Both Supervisor and Technical Manager approvals required for PDF export'
+      });
       return;
     }
 
@@ -61,6 +81,48 @@ const DailyCheckComplete = ({ checkId, onNewCheck, onEdit }) => {
       });
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleApprovalChange = () => {
+    // Refresh the check data when approval status changes
+    fetchCheck();
+  };
+
+  const handleApprovalToggle = async (approved) => {
+    const toggleId = `${Date.now()}-${approved}`;
+    setApprovingId(toggleId);
+
+    try {
+      const result = await postApprove(`/daily-check/${checkId}/approve`, {
+        is_approved: approved
+      });
+
+      if (result?.success) {
+        // Update timestamp immediately for better UX
+        if (approved) {
+          setApprovalTimestamp(new Date());
+        } else {
+          setApprovalTimestamp(null);
+        }
+
+        setToast({
+          type: 'success',
+          message: approved ? '✅ Daily check approved' : '✅ Approval removed'
+        });
+      } else {
+        throw new Error(result?.error || 'Failed to update approval status');
+      }
+    } catch (error) {
+      console.error('Error updating approval status:', error);
+      setToast({
+        type: 'error',
+        message: `❌ Failed: ${error.message || 'Try again'}`
+      });
+      // Revert the checkbox state on error
+      setIsApproved(!approved);
+    } finally {
+      setApprovingId(null);
     }
   };
 
@@ -175,15 +237,31 @@ const DailyCheckComplete = ({ checkId, onNewCheck, onEdit }) => {
         </div>
       )}
 
+      {/* NEW: Two-Level Approval Checklist */}
+      <ApprovalChecklist
+        checkId={checkId}
+        checkData={check}
+        onApprovalChange={handleApprovalChange}
+      />
+
       {/* Export Section */}
       <div className="export-section">
         <h3>📥 Export Data</h3>
-        <p>Download this daily check in your preferred format:</p>
+        <div className="export-info">
+          <p>Download this daily check in your preferred format:</p>
+          {!(check.supervisor_approved && check.technical_manager_approved) && (
+            <div className="export-warning">
+              <span className="icon">⚠️</span>
+              <span>PDF export requires both Supervisor and Technical Manager approvals</span>
+            </div>
+          )}
+        </div>
         <div className="export-buttons">
           <button
             className="btn btn-primary"
             onClick={() => handleExport('csv')}
             disabled={exporting}
+            title="CSV export available anytime"
           >
             {exporting ? (
               <>
@@ -198,6 +276,7 @@ const DailyCheckComplete = ({ checkId, onNewCheck, onEdit }) => {
             className="btn btn-primary"
             onClick={() => handleExport('xlsx')}
             disabled={exporting}
+            title="XLSX export available anytime"
           >
             {exporting ? (
               <>
@@ -209,9 +288,10 @@ const DailyCheckComplete = ({ checkId, onNewCheck, onEdit }) => {
             )}
           </button>
           <button
-            className="btn btn-primary"
+            className={`btn ${check.supervisor_approved && check.technical_manager_approved ? 'btn-success' : 'btn-disabled'}`}
             onClick={() => handleExport('pdf')}
-            disabled={exporting}
+            disabled={exporting || !check.supervisor_approved || !check.technical_manager_approved}
+            title={check.supervisor_approved && check.technical_manager_approved ? 'PDF export now available' : 'PDF export requires both approvals'}
           >
             {exporting ? (
               <>
@@ -219,7 +299,9 @@ const DailyCheckComplete = ({ checkId, onNewCheck, onEdit }) => {
                 Exporting...
               </>
             ) : (
-              <>📋 PDF</>
+              <>
+                {check.supervisor_approved && check.technical_manager_approved ? '✅ PDF' : '📋 PDF (Locked)'}
+              </>
             )}
           </button>
         </div>

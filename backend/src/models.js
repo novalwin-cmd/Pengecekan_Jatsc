@@ -53,6 +53,55 @@ export const DailyCheck = sequelize.define('DailyCheck', {
   notes: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  is_approved: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false
+  },
+  approved_at: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  approved_by: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  // ===== SUPERVISOR APPROVAL =====
+  supervisor_approved: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false
+  },
+  supervisor_name: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  supervisor_signature: {
+    type: DataTypes.TEXT, // Base64 encoded signature image
+    allowNull: true
+  },
+  supervisor_approved_at: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  // ===== TECHNICAL MANAGER APPROVAL =====
+  technical_manager_approved: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false
+  },
+  technical_manager_name: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  technical_manager_signature: {
+    type: DataTypes.TEXT, // Base64 encoded signature image
+    allowNull: true
+  },
+  technical_manager_approved_at: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   tableName: 'daily_checks',
@@ -297,9 +346,17 @@ DailyCheckReading.belongsTo(DailyCheck, {
 
 export async function initializeDatabase() {
   try {
-    // Sync models to database (recreate with new schema)
-    await sequelize.sync({ force: true });
-    console.log('✅ Database synced');
+    // Sync models to database
+    // Try alter first, fall back to force recreate if needed
+    try {
+      await sequelize.sync({ alter: true });
+      console.log('✅ Database synced (alter mode)');
+    } catch (alterError) {
+      console.warn('⚠️  Alter mode failed, attempting force mode...');
+      // If alter fails (common with SQLite schema changes), force recreate
+      await sequelize.sync({ force: true });
+      console.log('✅ Database synced (force mode)');
+    }
 
     // Seed default thresholds if empty
     try {
